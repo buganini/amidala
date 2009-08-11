@@ -25,7 +25,7 @@
 
 $time_begin=mtime();
 #<php>
-$ver_serial='2007020800';
+$ver_serial='2007021200';
 ini_set('display_errors', '0');
 #error_reporting(E_ALL & ~E_NOTICE);
 set_magic_quotes_runtime(0);
@@ -140,10 +140,16 @@ global $cancel;
 return ($cancel==1)?TRUE:FALSE;
 }
 
-function bbs2html_dc($s){
-if(strtolower($_POST['ccharset'])!='big5'){
-	addmsg(ERR,'Input charset must be Big5');
-	return $s;
+function bbs2html($s){
+global $__bbs_style,$__bbs_style_count;
+$s=rtrim($s);
+$s=str_replace("\r\n","\n",$s);
+$__bbs_style=array();
+$__bbs_style_count=0;
+if(strtolower($_POST['ccharset'])=='big5'){
+	$big5=true;
+}else{
+	$big=false;
 }
 $flag=0;
 $clr=array('000','B00','0B0','BB0','00B','B0B','0BB','BBB');
@@ -154,37 +160,36 @@ $ul=0;
 $sh=0;
 $rv=0;
 $dec='';
-if($ul==0 && $sh==0){$dec=' none';}
-$style='color: #'.$color.'; text-decoration:'.$dec.'; background-color: #'.$bg.';';
-$r='<html><head><meta http-equiv="Content-Type" content="text/html; charset=big5">
+if($ul==0 && $sh==0){$dec='none';}
+$r='<tr>';
+$style='color:#'.$color.';'.(($dec=='none')?'':(' text-decoration:'.$dec.';')).' background:#'.$bg.';';
+$head='<html><head><meta http-equiv="Content-Type" content="text/html; charset=big5">
 <style type="text/css">
-a {
-font-family: monospace;
-white-space: pre;
-line-height: 1em;
+td{
+padding:0;
+margin:0;
+border:0 none;
+text-align:center;
+text-decoration:none;
+font-family:Fixedsys;
 }
-.dc {
-width: 0.5em;
-position: absolute;
-overflow: hidden;
-text-align: left;
-}
-</style>
-</head>
-<body style="background: #000000;"><table align="center"><tr><td><pre><a style="'.$style.'">';
+tr{
+height:1em;
+padding:0;
+margin:0;
+border:0 none;
+}';
 for($i=0;$i<strlen($s);$i++){
-	if(substr($s,$i,2)==chr(27)."["){
+	if(substr($s,$i,2)==chr(27).'['){
 		$tmp='';
 		$j=$i+2;
 		while(substr($s,$j,1)!="m"){
 			$tmp.=substr($s,$j,1);
 			$j++;
 		}
-if($flag==1){
-	$h.=substr($s,$j+1,1);
-	$bak=$style;
-	$i++;
-}
+		if($big5 && $flag==1){
+			$bak=$style;
+		}
 		$l=strlen($tmp);
 		if($l==0){
 			$color='BBB';
@@ -194,9 +199,8 @@ if($flag==1){
 			$sh=0;
 			$rv=0;
 			$dec='';
-			if($ul==0 && $sh==0){$dec=' none';}
-			$style='color: #'.$color.'; text-decoration:'.$dec.'; background-color: #'.$bg.';';
-			$r.=(chr(0).'</a><a style="'.$style.'">');
+			if($ul==0 && $sh==0){$dec='none';}
+			$style='color:#'.$color.';'.(($dec=='none')?'':(' text-decoration:'.$dec.';')).' background:#'.$bg.';';
 		}else{
 			$t=explode(';',$tmp);
 			for($k=0;$k<count($t);$k++){
@@ -236,137 +240,69 @@ if($flag==1){
 			$dec='';
 			if($ul==1){$dec.=' underline';}
 			if($sh==1){$dec.=' blink';}
-			if($ul==0 && $sh==0){$dec=' none';}
-			$style='color: #'.$color.'; text-decoration:'.$dec.'; background-color: #'.$bg.';';
+			if($ul==0 && $sh==0){$dec='none';}
+			$style='color:#'.$color.';'.(($dec=='none')?'':(' text-decoration:'.$dec.';')).' background:#'.$bg.';';
 			if($hl==1){$color=str_replace("F","B",$color); $color=str_replace("5","0",$color);}
 			if($rv==1){$p=$color; $color=$bg; $bg=$p;}
-if($flag==1){
-	$r.=chr(0).'</a><a class="dc" style="'.$bak.'">'.$h.'</a><a style="'.$style.'">'.$h;
-	$flag=0;
-}else{
-			$r.=(chr(0).'</a><a style="'.$style.'">');
-}
 		}
 		$i=$i+$l+2;
-	}elseif(preg_match("/[\xA1-\xF9][\x40-\x7E\xA1-\xFE]/",substr($s,$i,2))){
-		$r.=substr($s,$i,2);
+	}elseif(substr($s,$i,1)=="\n"){
+		$r.='</tr>'."\n".'<tr>';
+		$flag=0;
+	}elseif($big5 && $flag==1){
+		$tmp=substr($s,$i,1);
+		if(preg_match('/^[\x40-\x7E\xA1-\xFE]$/',$tmp)){
+			$h.=$tmp;
+		}else{
+			$h='&nbsp;&nbsp;';
+		}
+		$h.=substr($s,$i,1);
+		$r.='<td colspan="2" '.bbs2html_style('width:1em; '.$bak).'><a '.bbs2html_style('position:absolute; overflow:hidden; width:0.5em; '.$bak).'>'.$h.'</a><a '.bbs2html_style($style).'>'.$h.'</a></td>';
+		$flag=0;
+	}elseif(preg_match("/^[\xA1-\xF9][\x40-\x7E\xA1-\xFE]$/",substr($s,$i,2))){
+		$r.='<td colspan="2" '.bbs2html_style('width:1em; '.$style).'>'.substr($s,$i,2).'</td>';
 		$i++;
-	}elseif(preg_match("/[\xA1-\xF9]\x1B/",substr($s,$i,2))){
-		$h=substr($s,$i,1);
-		$flag=1;
+	}elseif(preg_match("/[\xA1-\xF9]/",substr($s,$i,1))){
+		if(substr($s,$i+1,1)==chr(27)){
+			$h=substr($s,$i,1);
+			$flag=1;		
+		}else{
+			$r.='<td colspan="2" '.bbs2html_style('width:1em; '.$style).'>&nbsp;&nbsp;</td>';
+		}
+	}elseif(substr($s,$i,1)==' '){
+		$r.='<td '.bbs2html_style('width:0.5em; '.$style).'>&nbsp;</td>';
 	}else{
-		$r.=htmlspecialchars(substr($s,$i,1));
+		$r.='<td '.bbs2html_style('width:0.5em; '.$style).'>'.htmlspecialchars(substr($s,$i,1)).'</td>';
 	}
 }
-	$r.='</a></pre></td></tr></table></body></html>';
-	return $r;
+if($_POST['bbs2html_style_where']=='class'){
+	foreach($__bbs_style as $key=>$val){
+		$head.=("\n".'.X'.$val.'{'.$key.'}');
+	}
+}
+	$head.='</style>
+</head>
+<body style="background:#000000; font-family:Fixedsys; text-align:center;">
+<table cellpadding="0" cellspacing="0" style="margin:auto;">';
+	$r.='</tr>';
+	$tail='</table></body></html>';
+	if($_POST['bbs2html_headntail']=='on'){
+		return $head.$r.$tail;
+	}else{
+		return $r;
+	}
 }
 
-function bbs2html($s){
-$flag=0;
-$clr=array('000','B00','0B0','BB0','00B','B0B','0BB','BBB');
-$color='BBB';
-$bg='000';
-$hl=0;
-$ul=0;
-$sh=0;
-$rv=0;
-$dec='';
-if($ul==0 && $sh==0){$dec=' none';}
-$style='color: #'.$color.'; text-decoration:'.$dec.'; background-color: #'.$bg.';';
-$r='<html><head><meta http-equiv=content-type content="text/html; charset='.$_POST['charset'].'">
-<style type="text/css">
-a {
-font-family: monospace;
-white-space: pre;
-line-height: 1em;
-}
-</style>
-</head>
-<body style="background: #000000;"><table align="center"><tr><td><pre><a style="'.$style.'">';
-for($i=0;$i<strlen($s);$i++){
-	if(substr($s,$i,2)==chr(27)."["){
-		$tmp='';
-		$j=$i+2;
-		while(substr($s,$j,1)!="m"){
-			$tmp.=substr($s,$j,1);
-			$j++;
-		}
-if(eregi("^big5$",$_POST['ccharset']) && $flag==1){
-	$r.=substr($s,$j+1,1);
-	$i++;
-	$flag=0;
-}
-		$l=strlen($tmp);
-		if($l==0){
-			$color='BBB';
-			$bg='000';
-			$hl=0;
-			$ul=0;
-			$sh=0;
-			$rv=0;
-			$dec='';
-			if($ul==0 && $sh==0){$dec=' none';}
-			$style='color: #'.$color.'; text-decoration:'.$dec.'; background-color: #'.$bg.';';
-			$r.=(chr(0).'</a><a style="'.$style.'">');
-		}else{
-			$t=explode(';',$tmp);
-			for($k=0;$k<count($t);$k++){
-				if($t[$k]==0 || strlen($t[$k])==0){
-					$color='BBB';
-					$bg='000';
-					$hl=0;
-					$ul=0;
-					$sh=0;
-					$rv=0;
-				}elseif($t[$k]==1){
-					$hl=1;
-				}elseif($t[$k]==4){
-					$ul=1;
-				}elseif($t[$k]==5){
-					$sh=1;
-				}elseif($t[$k]==7){
-					$rv=1;
-				}else{
-					if(substr($t[$k],0,1)=='3'){
-						if(ereg("[0-7]",substr($t[$k],1,1))){
-							$color=$clr[substr($t[$k],1,1)];
-						}else{
-							$color='BBB';
-						}
-					}elseif(substr($t[$k],0,1)=='4'){
-						if(ereg("[0-7]",substr($t[$k],1,1))){
-							$bg=$clr[substr($t[$k],1,1)];
-						}else{
-							$bg='000';
-						}
-					}
-				}
-			}
-			if($rv==1){$p=$color; $color=$bg; $bg=$p;}
-			if($hl==1){$color=str_replace("B","F",$color); $color=str_replace("0","5",$color);}
-			$dec='';
-			if($ul==1){$dec.=' underline';}
-			if($sh==1){$dec.=' blink';}
-			if($ul==0 && $sh==0){$dec=' none';}
-			$style='color: #'.$color.'; text-decoration:'.$dec.'; background-color: #'.$bg.';';
-			if($hl==1){$color=str_replace("F","B",$color); $color=str_replace("5","0",$color);}
-			if($rv==1){$p=$color; $color=$bg; $bg=$p;}
-			$r.=(chr(0).'</a><a style="'.$style.'">');
-		}
-		$i=$i+$l+2;
-	}elseif(eregi("^big5$",$_POST['ccharset']) && preg_match("/[\xA1-\xF9][\x40-\x7E\xA1-\xFE]/",substr($s,$i,2))){
-		$r.=substr($s,$i,2);
-		$i++;
-	}elseif(eregi("^big5$",$_POST['ccharset']) && preg_match("/[\xA1-\xF9]\x1B/",substr($s,$i,2))){
-		$r.=substr($s,$i,1);
-		$flag=1;
-	}else{
-		$r.=htmlspecialchars(substr($s,$i,1));
+function bbs2html_style($style){
+	global $__bbs_style,$__bbs_style_count;
+	if(!isset($__bbs_style[$style])){
+		$__bbs_style[$style]=$__bbs_style_count++;
 	}
-}
-	$r.='</a></pre></td></tr></table></body></html>';
-	return $r;
+	if($_POST['bbs2html_style_where']=='class'){
+		return 'class="X'.$__bbs_style[$style].'"';
+	}else{
+		return 'style="'.$style.'"';
+	}
 }
 
 function accumulation($s,$f){
@@ -2223,7 +2159,6 @@ function en($method, $s){
 		case 'srt': $k=s2a($s); sort($k); $s=a2s($k); break;
 		case 'stu': $s=mbs()?mb_strtoupper($s):strtoupper($s); break;
 		case 'bbs': $s=bbs2html($s); break;
-		case 'bbd': $s=bbs2html_dc($s); break;
 		case 'unq': $s=uniq($s,0); break;
 		case 'mut': $s=str_mutate($s); break;
 		case 'ttb': $s=totable($s);break;
@@ -2279,7 +2214,6 @@ function de($method, $s){
 		case 'ucw': break;
 		case 'bbs': break;
 		case 'srt': $k=s2a($s); rsort($k); $s=a2s($k); break;
-		case 'bbd': break;
 		case 'rpt': break;
 		case 'unq': $s=uniq($s,1); break;
 		case 'rf'; $s=sqr($s,1); break;
@@ -2496,7 +2430,7 @@ document.getElementById('bt').value='new Amidala['+count+']';
 function newsmith(){
 smitharray[count]=window.open('<?echo $_SERVER['PHP_SELF']?>?smith='+count);
 count++;
-document.getElementById('bt').value='new Smith['+count+']';
+document.getElementById('bt').value='new Amidala['+count+']';
 }
 function go(){
 var alist=document.getElementById('order').value.split(',');
@@ -2639,7 +2573,8 @@ if($_POST['action']=='yes'){
 		unset($_COOKIE[session_name()]);
 		session_destroy();
 	}
-	$_POST['passtonext']=$_POST['plus_1']=$_POST['jmpmsg']=$_POST['sess_txt_also']=$_POST['scr']='on';
+	$_POST['bbs2html_headntail']=$_POST['passtonext']=$_POST['plus_1']=$_POST['jmpmsg']=$_POST['sess_txt_also']=$_POST['scr']='on';
+	$_POST['bbs2html_style_where']='class';
 	$_POST['mfix_pad']='';
 	$_POST['curtab']='gen';
 	$_POST['input']='text';
@@ -2772,8 +2707,14 @@ htmlhead();
 ?>
 <script type="text/javascript">
 var s;
-function doKeyDown(event){
-	if (event.ctrlKey && event.keyCode == 13){
+function doKeyDown(ev){
+	if(navigator.userAgent.match("Gecko")){
+		kc=ev.which;
+	}else{
+		kc=ev.keyCode;
+	}
+	getobj('help').innerHTML='Key '+kc+' is down';
+	if (ev.ctrlKey && kc == 13){
 		getobj('form').submit();
 		return false;
 	}
@@ -3171,7 +3112,6 @@ array('bin','Bin','no'),
 array('oct','Oct','no'),
 array('dec','Dec','no'),
 array('hex','Hex','no'),
-array('bbd','BBS -> HTML (Double Color)','ow'),
 array('bbs','BBS -> HTML','ow'),
 );
 for($i=0;$i<count($methods_table);$i++){
@@ -3252,6 +3192,7 @@ Sign<input type="text" name="base_sign2" size="2" value="<?echo $_POST['base_sig
 <tr><td>Square:</td><td><?radio('sqr_cl','auto','Auto');?> <?radio('sqr_cl','man','Manual');?> Rows:<input type="text" name="sqr_r" size="2" value="<?echo $_POST['sqr_r'];?>" /> Columns:<input type="text" name="sqr_c" size="2" value="<?echo $_POST['sqr_c'];?>" /></td></tr>
 <tr><td>SquareReflect</td><td><?chkbx('ref_ver','Vertical');?> <?chkbx('ref_hor','Horizonal');?></td></tr>
 <tr><td>StringMutate:</td><td><?chkbx('mut_fit','ShapeFit');?> Keep Left:<input type="text" name="mut_l" size="2" value="<?echo $_POST['mut_l'];?>" /> Right:<input type="text" name="mut_r" size="2" value="<?echo $_POST['mut_r'];?>" /></td></tr>
+<tr><td>BBS->HTML:</td><td><?chkbx('bbs2html_headntail','Full HTML');?> Write CSS in<?radio('bbs2html_style_where','class','Class');?><?radio('bbs2html_style_where','style','Style');?></td></tr>
 <tr><td>URL:</td><td><?chkbx('url_raw','RFC1738');?></td></tr>
 <tr><td>Chewing:</td><td><?chkbx('chewing_sort','Sort');?></td></tr>
 <tr><td>Repeat:</td><td><input type="text" name="rpt" size="2" value="<?echo $_POST['rpt'];?>" /></td></tr>
