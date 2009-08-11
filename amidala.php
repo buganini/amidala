@@ -25,7 +25,7 @@
 
 $time_begin=mtime();
 #<php>
-$ver_serial='2006121230';
+$ver_serial='2006121400';
 ini_set('display_errors', '0');
 set_magic_quotes_runtime(0);
 define('ERR','Error');
@@ -450,22 +450,22 @@ return $s;
 	return $s;
 }
 
-function s2a($s,$k=1){
+function s2a($s,$k=0){
 	if(count($_POST['ssep_de'])<$k){
 		addmsg(ERR,'SubSeparator not enough');
 		$r[0]=$s;
 		return $r;
 	}
-	$r=explod($_POST['ssep_de'][count($_POST['ssep_de'])-$k],$s);
+	$r=explod($_POST['ssep_de'][$k],$s);
 	return $r;
 }
-function a2s($s,$k=1){
-	$r=implode($_POST['ssep_de'][count($_POST['ssep_de'])-$k],$s);
+function a2s($s,$k=0){
+	$r=implode($_POST['ssep_de'][$k],$s);
 	return $r;
 }
 
 function s2m($s){
-	$r=s2a($s,2);
+	$r=s2a($s,1);
 	for($i=0;$i<count($r);$i++){
 		$r[$i]=s2a($r[$i]);
 	}
@@ -482,7 +482,7 @@ function mfix($s){
 	$pad=ent_de($_POST['mfix_pad']);
 	for($i=0;$i<count($s);$i++){
 		for($j=0;$j<$k;$j++){
-			if(empty($s[$i][$j]) && $s[$i][$j]!='0'){
+			if(!isset($s[$i][$j])){
 				$s[$i][$j]=$pad;
 			}
 		}
@@ -494,7 +494,7 @@ function m2s($s){
 	for($i=0;$i<count($s);$i++){
 		$s[$i]=a2s($s[$i]);
 	}	
-	$r=a2s($s,2);
+	$r=a2s($s,1);
 	return $r;
 }
 
@@ -533,7 +533,7 @@ if($_POST['ttb_mono']=="on"){
 }
 	for($i=0;$i<count($l);$i++){
 		for($j=0;$j<count($len);$j++){
-			if(empty($l[$i][$j]) && $l[$i][$j]!='0'){
+			if(!isset($l[$i][$j])){
 				$l[$i][$j]=str_repeat(' ',$len[$j]);
 			}else{
 if($_POST['ttb_align']=="left"){
@@ -718,7 +718,7 @@ function rotate($s,$rot,$nrot){
 }
 
 function matrix_multiply($s){
-$a=s2a($s,3);
+$a=s2a($s,2);
 if(count($a)<2){
 		addmsg(ERR,'Matrix not enough');
 		return $s;
@@ -1312,22 +1312,6 @@ if(!function_exists('iexplode')){
 	}
 }
 
-function substrcount($h,$n){
-	if(mbs()){
-		if($_POST['casei']=='on'){
-			return mb_substr_count(mb_strtolower($h),mb_strtolower($n));
-		}else{
-			return mb_substr_count($h,$n);
-		}
-	}else{
-		if($_POST['casei']=='on'){
-			return substr_count(strtolower($h),strtolower($n));
-		}else{
-			return substr_count($h,$n);
-		}
-	}
-}
-
 function streplace($a,$b,$c){
 	return implode($b,explod($a,$c));
 }
@@ -1369,21 +1353,45 @@ function strimwidth($s){
 	return substr($s,0,$_POST['stmwthl']-strlen($_POST['stmwtha'])).$_POST['stmwtha'];
 }
 
+function array_values_recursive($a,&$arr){
+	for($i=0;$i<count($a);$i++){
+		if(is_array($a[$i])){
+			array_values_recursive($a[$i],$arr);
+		}else{
+			$arr[]=$a[$i];
+		}
+	}
+}
+
+function super_explode($s,$lv=NULL){
+	if($lv===NULL){
+		$lv=count($_POST['ssep_de'])-1;
+	}
+	if($lv==-1){
+		return $s;
+	}
+	$a=explod($_POST['ssep_de'][$lv],$s);
+	for($i=0;$i<count($a);$i++){
+		$a[$i]=super_explode($a[$i],$lv-1);
+	}
+	return $a;
+}
+
 function statistics($s){
-	$bak=$s;
-	$res=array();
-	$k=strleng($s);
-	while($k>0){
-		$e=substri($s,0,1);
-		$n=substrcount($s,$e);
-		$s=streplace($e,'',$s);
-		$res[]=array($e,$n);
-		$k=strleng($s);
+	$a=super_explode($s);
+	$arr=array();
+	array_values_recursive($a,$arr);
+	if($_POST['casei']=='on'){
+		for($i=0;$i<count($arr);$i++){
+			$arr[$i]=mb()?mb_strtolower($arr[$i]):strtolower($arr[$i]);
+		}
 	}
-	for($i=0;$i<count($res);$i++){
-		addmsg(INFO,ent_en($res[$i][0]).'--'.$res[$i][1]);
+	$ret=array_count_values($arr);
+	$r=array();
+	foreach($ret as $key => $val){
+		$r[]=ent_en($key)."\t".$val;
 	}
-	return $bak;
+	return implode("\n",$r);
 }
 
 function cac_pre($s){
@@ -1903,8 +1911,8 @@ function hex_de($s){
 }
 
 function ASCIIFilter($s){
-	if(strlen($_POST['ssep_de'][count($_POST['ssep_de'])-1])==1){
-	$q=$_POST['ssep_de'][count($_POST['ssep_de'])-1];
+	if(strlen($_POST['ssep_de'][0])==1){
+	$q=$_POST['ssep_de'][0];
 	}else{
 	$q=' ';
 	addmsg(ERR,'Length of SubSeparator != 1, use SPACE');
@@ -2007,8 +2015,8 @@ function sqr_de_part($s,$r,$c){
 }
 
 function ASCIIFilter_de($s){
-	if(strlen($_POST['ssep_de'][count($_POST['ssep_de'])-1])==1){
-	$q=$_POST['ssep_de'][count($_POST['ssep_de'])-1];
+	if(strlen($_POST['ssep_de'][0])==1){
+	$q=$_POST['ssep_de'][0];
 	}else{
 	$q=' ';
 	addmsg(ERR,'Length of SubSeparator != 1, use SPACE');
@@ -2409,29 +2417,28 @@ function in_opt_range($n,$lv,$x){
 }
 
 function pro($s,$lv){
-	if($lv<count($GLOBALS['sep_array'])){
-		if($_POST['sep_pcre']=='on'){
-			$a=preg_explode($GLOBALS['sep_array'][$lv],$s);
-			$step=2;
-		}else{
-			$a=explod($GLOBALS['sep_array'][$lv],$s);
-			$step=1;
-		}
-		$ct=0;
-		$x=count($a);
-		for($i=0;$i<$x;$i+=$step){
-			if($_POST['opt_oper']!='on' || in_opt_range($ct,$lv,$x)){
-				$a[$i]=pro($a[$i],$lv+1);
-			}
-			$ct++;
-		}
-		if($_POST['sep_pcre']=='on'){
-			$s=implode('',$a);
-		}else{
-			$s=implode($GLOBALS['sep_array'][$lv],$a);
-		}
+	if($lv==count($GLOBALS['sep_array'])){
+		return proc($s);
+	}
+	if($_POST['sep_pcre']=='on'){
+		$a=preg_explode($GLOBALS['sep_array'][$lv],$s);
+		$step=2;
 	}else{
-		$s=proc($s);
+		$a=explod($GLOBALS['sep_array'][$lv],$s);
+		$step=1;
+	}
+	$ct=0;
+	$x=count($a);
+	for($i=0;$i<$x;$i+=$step){
+		if($_POST['opt_oper']!='on' || in_opt_range($ct,$lv,$x)){
+			$a[$i]=pro($a[$i],$lv+1);
+		}
+		$ct++;
+	}
+	if($_POST['sep_pcre']=='on'){
+		$s=implode('',$a);
+	}else{
+		$s=implode($GLOBALS['sep_array'][$lv],$a);
 	}
 	return $s;
 }
@@ -2521,6 +2528,7 @@ if(isset($_POST['action'])){
 	for($i=0;$i<count($_POST['ssep_de']);$i++){
 		$_POST['ssep_de'][$i]=ent_de($_POST['ssep_de'][$i]);
 	}
+	$_POST['ssep_de']=array_reverse($_POST['ssep_de']);
 	$_POST['sqr_r']=intval($_POST['sqr_r']);
 	$_POST['sqr_c']=intval($_POST['sqr_c']);
 	$_POST['mut_l']=abs(intval($_POST['mut_l']));
