@@ -25,7 +25,7 @@
 
 $time_begin=mtime();
 #<php>
-$ver_serial='2006102300';
+$ver_serial='2006120700';
 ini_set('display_errors', '0');
 set_magic_quotes_runtime(0);
 define('ERR','Error');
@@ -382,6 +382,20 @@ if(eregi("^big5$",$_POST['ccharset']) && $flag==1){
 }
 	$r.='</a></pre></td></tr></table></body></html>';
 	return $r;
+}
+
+function accumulation($s,$f){
+	$a=s2a($s);
+	if($f==0){
+		for($i=1;$i<count($a);$i++){
+			$a[$i]+=$a[$i-1];
+		}
+	}else{
+		for($i=count($a)-1;$i>=0;$i--){
+			$a[$i]-=$a[$i-1];
+		}
+	}
+	return a2s($a);
 }
 
 function network($s){
@@ -950,6 +964,62 @@ function pcre_rep($s){
 	return $s;
 }
 
+function base_conv($s,$flag=0){
+	$from=$_POST['base_from'];
+	$to=$_POST['base_to'];
+	$symbol1=$_POST['base_symbol1'];
+	$symbol2=$_POST['base_symbol2'];
+	if($flag==1){
+		$tmp=$from;
+		$from=$to;
+		$to=$tmp;
+		$tmp=$symbol1;
+		$symbol1=$symbol2;
+		$symbol2=$tmp;	
+	}
+	$symlen1=strleng($symbol1);
+	$symlen2=strleng($symbol2);
+	if($from>$symlen1 || $to>$symlen1 || $from>$symlen2 || $to>$symlen2){
+		addmsg(ERR,'Symbol not enough!');
+		return $s;
+	}
+	for($i=0;$i<$symlen1;$i++){
+		$de_table[substri($symbol1,$i,1).'']=$i;
+	}
+	if(substri($s,0,1)=='-'){
+		$s=substri($s,1);
+		$neg=true;
+	}else{
+		$neg=false;
+	}
+	if(bc()){
+		$val=0;
+		for($i=0;$i<strleng($s);$i++){
+			$val=bcmul($val,$from);
+			$e=substri($s,$i,1);
+			if(!isset($de_table[$e])){
+				addmsg(WARN,'Unknown symbol.');
+				$de_table[$e]=0;
+			}
+			$val=bcadd($val,$de_table[$e],0);
+		}
+		$ret='';
+		while(!empty($val)){
+			$m=bcmod($val,$to);
+			$ret=substri($symbol2,$m,1).$ret;
+			$val=bcsub($val,$m,0);
+			$val=bcdiv($val,$to,0);
+		}
+		if($neg){
+			return '-'.$ret;
+		}
+		return $ret;
+	}else{
+		addmsg(ERR,'Sorry, Numeric Base need BCMath.');
+		return $s;
+	}
+}
+
 function gen_rep($s){
 	global $patterns, $replacements;
 	$p=$patterns;
@@ -975,7 +1045,6 @@ function pcre_mat($s){
 	global $patterns;
 	$p=$patterns;
 	$ret=array();
-	$p=explod("\n",$pattern);
 	for($i=0;$i<count($p);$i++){
 		if(!pcre_valid($p[$i])){
 			continue;
@@ -1229,9 +1298,10 @@ function statistics($s){
 }
 
 function cac_pre($s){
-	global $func;
-	$func=array('root','abs','avedev','count','analyze','average','stdevp','stdev','power','round','floor','ceil','sqrt','log','sum','pow','exp','mod','sin','cos','tan','cot','sec','csc','ln','c');
-	$func_s=array('analyze','power','round','floor','ceil','sqrt','log','exp','sin','cos','tan','cot','sec','csc','ln');
+	global $func,$pi;
+	$pi='3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148086513282306647093844609550582231725359408128';
+	$func=array('dtor','root','abs','avedev','count','analyze','average','stdevp','stdev','round','floor','ceil','sqrt','log','sum','pow','exp','mod','sin','cos','tan','cot','sec','csc','ln','c');
+	$func_s=array('dtor','analyze','round','floor','ceil','sqrt','log','exp','sin','cos','tan','cot','sec','csc','ln');
 	if($s==''){return 0;}
 	$m=$_POST['calculator'];
 	if($m==''){$m='x';}
@@ -1244,7 +1314,7 @@ function cac_pre($s){
 	$m=preg_replace('/(\\d)\\s+\\)/','\\1)',$m);
 	$m=preg_replace('/\\s/','',$m);
 	$m=preg_replace('/(\\d)\\.(\\D)/','\\1.0\\2',$m);
-	$m=preg_replace('/pi/i','(3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148086513282306647093844609550582231725359408128)',$m);
+	$m=preg_replace('/pi/i','('.$pi.')',$m);
 	if(ereg('[<>]',$m)){
 		addmsg(ERR,'Wrong input');
 		return $s;
@@ -1356,7 +1426,7 @@ while(!ereg('^<[^>]*>$',$s)){
 	}
 	if(ereg('<[^>]*>\^<[^>]*>',$s)){
 		#pow;
-		$s=preg_replace('/(<[^>]*>)\^(<[^>]*>)/e','cac_func("power","\1,\2")',$s);	
+		$s=preg_replace('/(<[^>]*>)\^(<[^>]*>)/e','cac_func("pow","\1,\2")',$s);	
 		continue;
 	}
 	if(ereg('<[^>]*>\*<[^>]*>',$s)){
@@ -1414,7 +1484,7 @@ while(!ereg('^<[^>]*>$',$s)){
 }
 
 function cac_func($f,$s,$tqwe=0){
-#echo $f.':'.$s.'<br />';
+	global $pi;
 	$tma='Too many arguments';
 	$tfa='Too few arguments';
 	$a=explode(',',$s);
@@ -1565,7 +1635,9 @@ function cac_func($f,$s,$tqwe=0){
 		if($c==1){
 			$a[1]=0;
 		}
-		$r=round($a[0],$a[1]);
+		$r=round($a[0],$a[1]);	
+	}elseif($f=='dtor'){
+		$r=bc()?bcdiv(bcmul($a[0],$pi),180):($a[0]*$pi)/180;
 	}elseif($f=='log'){
 		if($c>2){
 			addmsg(WARN,$tma);
@@ -1590,17 +1662,11 @@ function cac_func($f,$s,$tqwe=0){
 			addmsg(WARN,$tma);
 			$r=0;
 		}
-		$r=pow($a[0],$a[1]);
-	}elseif($f=='power'){
-		if($c>2){
-			addmsg(WARN,$tma);
-			$r=0;
+		if(strpos($a[1],'.')===false){
+			$r=bc()?bcpow($a[0],$a[1]):pow($a[0],$a[1]);
+		}else{
+			$r=pow($a[0],$a[1]);
 		}
-		if($c<2){
-			addmsg(WARN,$tma);
-			$r=0;
-		}
-		$r=bc()?bcpow($a[0],$a[1]):pow($a[0],$a[1]);
 	}elseif($f=='sqrt'){
 		if($c>1){
 			addmsg(WARN,$tma);
@@ -2051,6 +2117,7 @@ function en($method, $s){
 		case 'rpt': $s=str_repeat($s,$_POST['rpt']); break;
 		case 'rev': $s=str_rev($s); break;
 		case 'crv': $s=case_rev($s); break;
+		case 'base': $s=base_conv($s,0); break;
 		case 'rep': $s=gen_rep($s); break;
 		case 'pcr': $s=pcre_rep($s); break;
 		case 'pcm': $s=pcre_mat($s); break;
@@ -2067,6 +2134,7 @@ function en($method, $s){
 		case 'unq': $s=uniq($s,0); break;
 		case 'mut': $s=str_mutate($s); break;
 		case 'ttb': $s=totable($s);break;
+		case 'acc': $s=accumulation($s,0); break;
 		case 'stl': $s=mbs()?mb_strtolower($s):strtolower($s); break;
 		case 'ucw': $s=ucwords($s); break;
 		case 'sln': $s=strleng($s); break;
@@ -2111,6 +2179,7 @@ function de($method, $s){
 		case 'rev': $s=str_rev($s); break;
 		case 'spe': $s=html_entity_decode($s); break;
 		case 'hen': break;
+		case 'base': $s=base_conv($s,1); break;
 		case 'md5': addmsg(INFO,'<a href="http://www.md5lookup.com/?category=main&page=search" target="_blank">http://www.md5lookup.com</a>'); break;
 		case 'stu': break;
 		case 'crv': $s=case_rev($s); break;
@@ -2123,6 +2192,7 @@ function de($method, $s){
 		case 'unq': $s=uniq($s,1); break;
 		case 'rf'; $s=sqr_de($s); break;
 		case 'pcr': break;
+		case 'acc': $s=accumulation($s,1); break;
 		case 'uue': $s=convert_uudecode($s); break;
 		case 'det': break;
 		case 'ttb': break;
@@ -2183,26 +2253,116 @@ if($_POST['processs']=='de'){
 return $s;
 }
 
-function pro($s,$sp){
-	if(count($sp)>0){
+function in_opt_range($n,$lv,$x){
+	if(empty($GLOBALS['opt_oper'][$lv])){
+		return TRUE;
+	}
+	if($_POST['plus_1']=='on'){
+		$n++;
+		$x++;
+	}
+	$arr=explode(',',$GLOBALS['opt_oper'][$lv]);
+	$ret=false;
+	for($i=0;$i<count($arr);$i++){
+		$flag=FALSE;
+		$arr[$i]=preg_replace('/[^0-9\\-?!*$%+]/','',$arr[$i]);
+		if(substr($arr[$i],0,1)=='!'){
+			$flag=TRUE;
+			$arr[$i]=substr($arr[$i],1);
+		}
+		$arr[$i]=str_replace('!','',$arr[$i]);
+		if(strlen($arr[$i])==0){
+			$ret=TRUE;
+		}elseif(preg_match('/^\\d+$/',$arr[$i])){
+			if($n==$arr[$i]){
+				$ret=TRUE;
+			}
+		}elseif(preg_match('/^\\d+-$/',$arr[$i])){
+			$no=preg_replace('/^(\\d+)-$/','\\1',$arr[$i]);
+			if($n>=$no){
+				$ret=true;
+			}else{
+				$ret=false;
+			}
+		}elseif(preg_match('/^-\\d+$/',$arr[$i])){
+			$no=preg_replace('/^-(\\d+)$/','\\1',$arr[$i]);
+			if($n<=$no){
+				$ret=true;
+			}else{
+				$ret=false;
+			}
+		}elseif(preg_match('/^\\d+-\\d+$/',$arr[$i])){
+			$n1=preg_replace('/^(\\d+)-(\\d+)$/','\\1',$arr[$i]);
+			$n2=preg_replace('/^(\\d+)-(\\d+)$/','\\2',$arr[$i]);
+			if($n>=$n1 && $n<=$n2){
+				$ret=true;
+			}else{
+				$ret=false;
+			}
+		}elseif(preg_match('/^\\+\\d+%\\d+$/',$arr[$i])){
+			$n1=preg_replace('/^\\+(\\d+)%(\\d)+$/','\\1',$arr[$i]);
+			$n2=preg_replace('/^\\+(\\d+)%(\\d)+$/','\\2',$arr[$i]);
+			if(($n+$n1)%$n2==0){
+				$ret=true;
+			}else{
+				$ret=false;
+			}
+		}elseif($arr[$i]=='$'){
+			if($n+1==$x){
+				$ret=true;
+			}else{
+				$ret=false;
+			}
+		}elseif(preg_match('/[*?]/',$arr[$i])){
+			$pat='';
+			for($i=0;$i<strlen($arr[$i]);$i++){
+				$e=substr($arr[$i],$i,1);
+				if($e=='*'){
+					$pat.='\\d*';
+				}elseif($e=='?'){
+					$pat.='\\d';
+				}else{
+					$pat.=$e;
+				}
+			}
+			if(preg_match('/^'.$pat.'$/',$n)){
+				$ret=true;
+			}else{
+				$ret=false;
+			}
+		}
+		if($flag){
+			if($ret){
+				$ret=false;
+			}else{
+				$ret=true;
+			}
+		}
+	}
+	return $ret;
+}
+
+function pro($s,$lv){
+	if($lv<count($GLOBALS['sep_array'])){
 		if($_POST['sep_pcre']=='on'){
-			$a=preg_explode($sp[0],$s);
-			for($i=1;$i<count($sp);$i++){
-				$tmp[$i-1]=$sp[$i];
+			$a=preg_explode($GLOBALS['sep_array'][$lv],$s);
+			$step=2;
+		}else{
+			$a=explod($GLOBALS['sep_array'][$lv],$s);
+			$step=1;
+		}
+		$ct=0;
+		$x=count($a);
+		for($i=0;$i<$x;$i+=$step){
+			if($_POST['opt_oper']!='on' || in_opt_range($ct,$lv,$x)){
+				$a[$i]=pro($a[$i],$lv+1);
 			}
-			for($i=0;$i<count($a);$i+=2){
-				$a[$i]=pro($a[$i],$tmp);
-			}
+			$ct++;
+		}
+		if($_POST['sep_pcre']=='on'){
 			$s=implode('',$a);
 		}else{
-			$a=explod($sp[0],$s);
-			for($i=1;$i<count($sp);$i++){
-				$tmp[$i-1]=$sp[$i];
-			}
-			for($i=0;$i<count($a);$i++){
-				$a[$i]=pro($a[$i],$tmp);
-			}
-			$s=implode($sp[0],$a);
+			$s=implode($GLOBALS['sep_array'][$lv],$a);
 		}
 	}else{
 		$s=proc($s);
@@ -2257,16 +2417,18 @@ if(isset($_POST['action'])){
 		}
 		$oridata=$s;
 	}
+	$_POST['base_from']+=0;
+	$_POST['base_to']+=0;
 	$_POST['rot']=$_POST['rot']%26;
 	$_POST['nrot']=$_POST['nrot']%10;
 	$method=$_REQUEST['method'];
 	$dir=$_POST['dir'];
-	$_POST['trows']=abs($_POST['trows']*1);
-	$_POST['tcols']=abs($_POST['tcols']*1);
-	$_POST['text_size']=abs($_POST['text_size']*1);
+	$_POST['trows']=abs($_POST['trows']+0);
+	$_POST['tcols']=abs($_POST['tcols']+0);
+	$_POST['text_size']=abs($_POST['text_size']+0);
 	$_POST['transpose']=$_POST['transpose']%12;
-	$_POST['rpt']=$_POST['rpt']*1;
-	$_POST['stmwthl']=$_POST['stmwthl']*1;
+	$_POST['rpt']+=0;
+	$_POST['stmwthl']+=0;
 	$_POST['sepr']=str_replace("\r\n","\n",$_POST['sepr']);
 	$_POST['ssep']=str_replace("\r\n","\n",$_POST['ssep']);
 	$_POST['ssep_de']=explod("\n",$_POST['ssep']);
@@ -2277,13 +2439,13 @@ for($i=0;$i<count($_POST['ssep_de']);$i++){
 	$_POST['sqr_c']=intval($_POST['sqr_c']);
 	$_POST['mut_l']=abs(intval($_POST['mut_l']));
 	$_POST['mut_r']=abs(intval($_POST['mut_r']));
-	$sep_array=explod("\n",$_POST['sepr']);
+	$GLOBALS['sep_array']=explod("\n",$_POST['sepr']);
 	if($_POST['sep']=="on"){
-	for($i=0;$i<count($sep_array);$i++){
-		$sep_array[$i]=ent_de($sep_array[$i]);
+	for($i=0;$i<count($GLOBALS['sep_array']);$i++){
+		$GLOBALS['sep_array'][$i]=ent_de($GLOBALS['sep_array'][$i]);
 	}
 	}
-	$tmp=$sep_array;
+	$tmp=$GLOBALS['sep_array'];
 	sort($tmp);
 	for($i=1;$i<count($tmp);$i++){
 		if($tmp[$i]==$tmp[$i-1]){
@@ -2301,8 +2463,13 @@ for($i=0;$i<count($_POST['ssep_de']);$i++){
 		$_POST['batch2']=$_POST['batch'];
 		$_POST['processs']=$_POST['process'];
 	}
+	if($_POST['opt_oper']=='on'){
+		$_POST['oper_opt']=str_replace("\r\n","\n",$_POST['oper_opt']);
+		$GLOBALS['opt_oper']=explode("\n",$_POST['oper_opt']);
+	}
 }else{
 #Default setting;
+	$_POST['plus_1']='on';
 	$_POST['mfix_pad']='';
 	$_POST['curtab']='gen';
 	$_POST['input']='text';
@@ -2310,6 +2477,10 @@ for($i=0;$i<count($_POST['ssep_de']);$i++){
 	$_POST['casei']='off';
 	$_POST['rot']=13;
 	$_POST['nrot']=5;
+	$_POST['base_symbol1']='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	$_POST['base_symbol2']=$_POST['base_symbol1'];
+	$_POST['base_from']=10;
+	$_POST['base_to']=16;
 	if(isset($_REQUEST['method'])){
 		$method=$_REQUEST['method'];
 	}else{
@@ -2377,7 +2548,7 @@ if($_POST['scr']=="on"){
 	$s=str_replace("\r\n","\n",$s);
 }
 if($_POST['sep']=="on"){
-	$s=pro($s,$sep_array);
+	$s=pro($s,0);
 }else{
 	$s=proc($s);
 }
@@ -2472,6 +2643,7 @@ function assis(s){
 	msg['che']='Skip HtmlSpecialChars: Auto On';
 	msg['ascii']='Use 1 SubSeparator\n\nGeneral Usage:\nSubSeparator: SPACE';
 	msg['cor']='Use 1 SubSeparator\n\nGeneral Usage:\nSubSeparator: \\n';
+	msg['acc']='Use 1 SubSeparator';
 	msg['ave']='Use 1 SubSeparator';
 	msg['unq']='Use 1 SubSeparator\nEncode: Keep the first sample\nDecode: Keep the last sample';
 	msg['sdv']='Use 1 SubSeparator';
@@ -2594,6 +2766,7 @@ getobj('text_rows').value=text_height+5;
 textconfig(1);
 		}else if(szobj=='sepr'){
 getobj('sepr').rows+=5;
+getobj('oper_opt').rows=getobj('sepr').rows;
 		}else if(szobj=='ssep'){
 getobj('ssep').rows+=5;
 		}else if(szobj=='rep'){
@@ -2608,11 +2781,12 @@ getobj('text_cols').value=text_width-5;
 textconfig(1);
 		}else if(szobj=='sepr'){
 if(getobj('sepr').cols>20)getobj('sepr').cols-=20;
+getobj('oper_opt').cols=getobj('sepr').cols;
 		}else if(szobj=='ssep'){
 if(getobj('ssep').cols>20)getobj('ssep').cols-=20;
 		}else if(szobj=='rep'){
 if(getobj('pattern').cols>20)getobj('pattern').cols-=20;
-if(getobj('replacement').cols>20)getobj('replacement').cols-=20;
+getobj('replacement').cols=getobj('pattern').cols;
 		}
 	}else if(n==6){
 		if(szobj=='text'){
@@ -2620,6 +2794,7 @@ getobj('text_cols').value=text_width+5;
 textconfig(1);
 		}else if(szobj=='sepr'){
 getobj('sepr').cols+=20;
+getobj('oper_opt').cols=getobj('sepr').cols;
 		}else if(szobj=='ssep'){
 getobj('ssep').cols+=20;
 		}else if(szobj=='rep'){
@@ -2634,11 +2809,12 @@ getobj('text_rows').value=text_height-5;
 textconfig(1);
 		}else if(szobj=='sepr'){
 if(getobj('sepr').rows>5)getobj('sepr').rows-=5;
+getobj('oper_opt').rows=getobj('sepr').rows;
 		}else if(szobj=='ssep'){
 if(getobj('ssep').rows>5)getobj('ssep').rows-=5;
 		}else if(szobj=='rep'){
 if(getobj('pattern').rows>5)getobj('pattern').rows-=5;
-if(getobj('replacement').rows>5)getobj('replacement').rows-=5;
+getobj('replacement').rows=getobj('pattern').rows;
 		}
 	}else if(n==5){
 		if(szobj=='text'){
@@ -2648,6 +2824,8 @@ textconfig(1);
 		}else if(szobj=='sepr'){
 getobj('sepr').cols=20;
 getobj('sepr').rows=6;
+getobj('oper_opt').cols=20;
+getobj('oper_opt').rows=6;
 		}else if(szobj=='ssep'){
 getobj('ssep').cols=20;
 getobj('ssep').rows=6;
@@ -2726,19 +2904,21 @@ for($i=0;$i<count($tabs);$i++){
 </div>
 <div id="gen" class="tabc"><span class="block">
 <table>
-<tr><td>Input: </td><td><input type="radio" name="input" onclick="getobj('help').innerHTML='Auto turn on \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=true; getobj('fin').disabled=true;" id="intext" value="text" <?echo $_POST['input']=='text'?'checked="checked"':'';?>/><label for="intext">Text Area</label><input type="radio" onclick="getobj('help').innerHTML='Auto turn off \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=false; getobj('fin').disabled=false;" name="input" id="infile" value="file" <?echo $_POST['input']=='file'?'checked="checked"':'';?>/><label for="infile">File</label><input type="file" name="fin" <?echo $_POST['input']=='file'?'':'disabled="disabled"';?>/></td></tr>
+<tr><td>Input: </td><td><input type="radio" name="input" onclick="getobj('help').innerHTML='Auto turn on \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=true; getobj('fin').disabled=true;" id="intext" value="text" <?echo $_POST['input']=='text'?'checked="checked"':'';?>/><label for="intext">Text Area</label><input type="radio" onclick="getobj('help').innerHTML='Auto turn off \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=false; getobj('fin').disabled=false;" name="input" id="infile" value="file" <?echo $_POST['input']=='file'?'checked="checked"':'';?>/><label for="infile">File</label><input type="file" id="fin" name="fin" <?echo $_POST['input']=='file'?'':'disabled="disabled"';?>/></td></tr>
 <tr><td>Output: </td><td><input type="radio" name="out" onclick="getobj('form').target='_self'" id="ta" value="text" <?echo ($_POST['out']=="text")?'checked="checked" ':'';?>/><label for="ta">Text Area</label> <input type="radio" name="out" id="fd" onclick="getobj('form').target='_self'" value="file" <?echo ($_POST['out']=="file")?'checked="checked" ':'';?>/><label for="fd">File Download</label> <input type="radio" name="out" onclick="getobj('form').target='_blank'" id="bf" value="blank" <?echo ($_POST['out']=="blank")?'checked="checked" ':'';?>/><label for="bf">Blank Frame</label></td></tr>
 <tr><td>Method: </td><td>
 <select name="method" id="method" onchange="assis(1);">
 <?
 $methods_table=array(
 array('raw','RAW (Output input)','rw'),
+array('acc','Accumulation','no'),
 array('srt','Sort','no'),
 array('unq','Unique','no'),
 array('tra','Transpose','no'),
 array('msk','Network','ow'),
 array('ttb','To Table','ow'),
 array('cac','Calculator','ow'),
+array('base','Numeric Base','no'),
 array('det','Determinant Value','ow'),
 array('mmtp','Matrix Multiplication','ow'),
 array('mtr','Matrix/Square Transpose','ed'),
@@ -2802,7 +2982,10 @@ for($i=0;$i<count($methods_table);$i++){
 </select> <input type="button" value="Add to Batch" onClick="var i; i=((getobj('mode_en').checked==true)?'e':'d'); if(getobj('batch').value==''){getobj('batch').value=i+'-'+getobj('method').value;}else{getobj('batch').value=getobj('batch').value+', '+i+'-'+getobj('method').value}" /></td></tr>
 <tr><td></td><td><?radio('mode','en','Encode');?> <?radio('mode','de','Decode');?></td></tr>
 <tr><td>Batch: </td><td><input type="text" size="70" name="batch" id="batch" value="<?echo $_POST['batch'];?>" /><br /><?radio('process','en','Forward');?> <?radio('process','de','Backward');?> <input type="button" value="Clear" onclick="getobj('batch').value='';" /></td></tr>
-</table></span><span class="block"><?chkbx('sep','Separator');?><br /><span style="padding-left:10px;"><?chkbx('sep_pcre','PCRE');?><br /><textarea name="sepr" onfocus="szobj='sepr'" id="sepr"><?echo $_POST['sepr'];?></textarea></span></span>
+</table></span><span class="block"><?chkbx('sep','Separator');?><br />
+<span style="padding-left:10px;"><table><tr><td><?chkbx('sep_pcre','PCRE');?><br />
+<textarea name="sepr" onfocus="szobj='sepr'" id="sepr"><?echo $_POST['sepr'];?></textarea></td><td><?chkbx('opt_oper','Optional Operation');?><br />
+<textarea name="oper_opt" onfocus="szobj='sepr'" id="oper_opt"><?echo $_POST['oper_opt'];?></textarea><br /><?chkbx('plus_1','Plus 1');?></td></tr></table></span></span>
 </div>
 <div id="conf" class="tabc"><span class="block">
 <?chkbx('jmpmsg','Auto Jump to Message');?><br />
@@ -2843,6 +3026,9 @@ echo '<option value="'.$i.'"'.(($_POST['nrot']==$i)?' selected="selected"':'').'
 }
 ?></select></td></tr>
 <tr><td>StringTrimWidth</td><td>Width:<input type="text" name="stmwthl" size="2" value="<?echo $_POST['stmwthl'];?>" /> Append:<input type="text" name="stmwtha" size="5" value="<?echo $_POST['stmwtha'];?>" /></td></tr>
+<tr><td>Numeric Base:</td><td>From<input type="text" name="base_from" value="<?echo $_POST['base_from'];?>" /> To<input type="text" name="base_to" value="<?echo $_POST['base_to'];?>" /></td></tr>
+<tr><td>From Symbols</td><td><input type="text" name="base_symbol1" size="80" value="<?echo $_POST['base_symbol1'];?>" /></td></tr>
+<tr><td>To Symbols</td><td><input type="text" name="base_symbol2" size="80" value="<?echo $_POST['base_symbol2'];?>" /></td></tr>
 </table></span>
 <span class="block">
 <table>
@@ -2870,7 +3056,7 @@ echo '<option value="'.$i.'"'.(($_POST['nrot']==$i)?' selected="selected"':'').'
 Current : <script type="text/javascript">
 	document.write('<input type="text" name="ccharset" id="ccharset" value="'+((typeof(document.charset)=="undefined")?document.characterSet:document.charset)+'" />');
 </script><br />
-Next : <input type="text" name="charset" value="<?echo $_POST['charset'];?>" /><select onChange="getobj('charset').value=this.value;">
+Next : <input type="text" name="charset" id="charset" value="<?echo $_POST['charset'];?>" /><select onChange="getobj('charset').value=this.value;">
 <option value="<?echo $_POST['charset'];?>" selected="selected">Default(<?echo $_POST['charset'];?>)</option>
 <option value="UTF-8">Unicode(UTF-8)</option>
 <option value="big5">Chinese Traditional(big5)</option>
