@@ -25,7 +25,7 @@
 
 $time_begin=mtime();
 #<php>
-$ver_serial='2006121400';
+$ver_serial='2007010200';
 ini_set('display_errors', '0');
 set_magic_quotes_runtime(0);
 define('ERR','Error');
@@ -1131,7 +1131,7 @@ function gen_rep_de($s){
 }
 
 function pcre_mat($s){
-	global $patterns;
+	global $patterns,$patternclip;
 	$p=$patterns;
 	$ret=array();
 	for($i=0;$i<count($p);$i++){
@@ -1139,9 +1139,7 @@ function pcre_mat($s){
 			continue;
 		}
 		preg_match_all($p[$i],$s,$res);
-		for($j=0;$j<count($res[0]);$j++){
-			$ret[]=$res[0][$j];
-		}
+		$ret=array_merge($ret,$res[$patternclip[$i]]);
 	}
 	addmsg(INFO,count($ret).' record(s) found.');
 	return implode("\n",$ret);
@@ -1273,12 +1271,14 @@ if(mb()){
 			return $ret;
 		}
 	}
+if(!function_exists('mb_stripos')){
 	function mb_stripos($a,$b){
 		$a=mb_strtolower($a);
 		$b=mb_strtolower($b);
 		$c=mb_strpos($a,$b);
 		return $c;
 	}
+}
 	function mb_iexplode($a,$s){
 		$ret=array();
 		$c=0;
@@ -1485,7 +1485,7 @@ function cac_pre($s){
 		$t=str_replace($func[$i].'(','',$t);
 	}
 	$t=preg_replace('/<[^>]*>/i','',$t);
-	$t=preg_replace('/[,()+\^\-*\/!{}\[\]]/','',$t);
+	$t=preg_replace('/[,()+\^\-*\/!{}\[\]%]/','',$t);
 	if(strlen($t)>0){
 		addmsg(ERR,'Invalid input',1);
 	}
@@ -2629,6 +2629,8 @@ if(isset($_POST['action'])){
 $pattern=str_replace("\r\n","\n",$_POST['pattern']);
 $patterns=explod("\n",$pattern);
 for($i=0;$i<count($patterns);$i++){
+	list($patterns[$i],$patternclip[$i])=explod("\t",$patterns[$i]);
+	$patternclip[$i]=abs(intval($patternclip[$i]));
 	$patterns[$i]=ent_de($patterns[$i]);
 }
 $replacement=str_replace("\r\n","\n",$_POST['replacement']);
@@ -3109,7 +3111,7 @@ SubSeparator:<br /><textarea onfocus="szobj='ssep'" name="ssep" id="ssep"><?echo
 <div id="arg" class="tabc"><span class="block">
 <table>
 <tr><td>Match/Replace:</td><td><input type="button" value="Clear" onClick="getobj('pattern').value=''; getobj('replacement').value='';" /></td></tr>
-<tr><td>Pattern:</td><td><textarea onfocus="szobj='rep'" name="pattern" id="pattern"><?echo htmlspecialchars($pattern);?></textarea></td></tr>
+<tr><td>Pattern:</td><td><textarea onkeydown="return catchTab(this,event);" onfocus="szobj='rep'" name="pattern" id="pattern"><?echo htmlspecialchars($pattern);?></textarea></td></tr>
 <tr><td>Replacement:</td><td><textarea onfocus="szobj='rep'" name="replacement" id="replacement"><?echo htmlspecialchars($replacement);?></textarea></td></tr>
 <tr><td>Calculator:</td><td><input type="text" name="calculator" value="<?echo $_POST['calculator']?>" /></td></tr>
 <tr><td>Key:</td><td><input type="text" name="key" value="<?echo $_POST['key']?>" /></td></tr>
@@ -3222,3 +3224,4 @@ echo 'No message.';
 </form>
 </body>
 </html>
+
