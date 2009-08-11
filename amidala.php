@@ -25,7 +25,7 @@
 
 $time_begin=mtime();
 #<php>
-$ver_serial='2006120700';
+$ver_serial='2006121230';
 ini_set('display_errors', '0');
 set_magic_quotes_runtime(0);
 define('ERR','Error');
@@ -57,10 +57,7 @@ if(!pcre()){
 
 if(!bc()){
 	addmsg(WARN,'BC Math Library Not Found! Calculator will operate with low precision.');
-}else{
-	bcscale(150);
 }
-
 if(!mb()){
 	addmsg(WARN,'MBString Library Not Found! Some function will be limited.');
 	$_POST['mbstring']='off';
@@ -134,11 +131,11 @@ function strleng($s){
 	}
 }
 
-function substri($a,$b,$c){
-	if(mbs()){
-		return mb_substr($a,$b,$c);
+function substri($a,$b,$c=NULL){
+	if($c===NULL){
+		return mbs()?mb_substr($a,$b):substr($a,$b);
 	}else{
-		return substr($a,$b,$c);
+		return mbs()?mb_substr($a,$b,$c):substr($a,$b,$c);
 	}
 }
 
@@ -930,12 +927,32 @@ function bit_rev($s){
 	return $r;
 }
 
-function pcre_valid($s){
+function pcre_valid(&$s){
 	if(empty($s)){
 		addmsg(ERR,'Empty PCRExpression');
 		return FALSE;
 	}
-	$m=preg_replace('/.*?([a-z]*)$/i','\1',$s);
+	$del=substr($s,0,1);
+	$l=strlen($s);
+	$flag=true;
+	for($i=1;$i<$l;$i++){
+		$e=substr($s,$i,1);
+		if($e=='\\'){
+			$i++;
+			continue;
+		}elseif($e==$del){
+			$flag=false;
+			break;
+		}
+	}
+	if($flag){
+		addmsg(ERR,'No delimiter in PCRE');
+		return false;
+	}
+	if($i+1==$l){
+		return true;
+	}
+	$m=substr($s,$i+1);
 	if(ereg('[^iAmsexEU]',$m)){
 		addmsg(WARN,'Unknown modifier \''.$m.'\'');
 		return FALSE;
@@ -943,7 +960,7 @@ function pcre_valid($s){
 	if(ereg('e',$m)){
 		addmsg(WARN,'Modifier \'e\' is disabled');
 		return FALSE;
-	}
+	}	
 	return TRUE;
 }
 
@@ -952,72 +969,144 @@ function pcre_rep($s){
 	$p=$patterns;
 	$r=$replacements;
 	for($i=0;$i<count($p);$i++){
-		$p[$i]=ent_de($p[$i]);
 		if(!pcre_valid($p[$i])){
 			continue;
 		}
 		if($_POST['casei']=='on'){
 			$p[$i].='i';
 		}
-		$s=preg_replace($p[$i], ent_de($r[$i]), $s);
+		$s=preg_replace($p[$i], $r[$i], $s);
 	}
 	return $s;
 }
 
 function base_conv($s,$flag=0){
+	if(!bc()){
+		addmsg(ERR,'Sorry, Numeric Base need BCMath.');
+		return $s;
+	}
 	$from=$_POST['base_from'];
 	$to=$_POST['base_to'];
 	$symbol1=$_POST['base_symbol1'];
 	$symbol2=$_POST['base_symbol2'];
+	$pt1=$_POST['base_point1'];
+	$pt2=$_POST['base_point2'];
+	$sign1=$_POST['base_sign1'];
+	$sign2=$_POST['base_sign2'];
 	if($flag==1){
 		$tmp=$from;
 		$from=$to;
 		$to=$tmp;
 		$tmp=$symbol1;
 		$symbol1=$symbol2;
-		$symbol2=$tmp;	
+		$symbol2=$tmp;
+		$tmp=$pt1;
+		$pt1=$pt2;
+		$pt2=$tmp;	
+		$tmp=$sign1;
+		$sign1=$sign2;
+		$sign2=$tmp;	
 	}
 	$symlen1=strleng($symbol1);
 	$symlen2=strleng($symbol2);
-	if($from>$symlen1 || $to>$symlen1 || $from>$symlen2 || $to>$symlen2){
+	if($from>$symlen1 || $to>$symlen2){
 		addmsg(ERR,'Symbol not enough!');
 		return $s;
 	}
 	for($i=0;$i<$symlen1;$i++){
 		$de_table[substri($symbol1,$i,1).'']=$i;
 	}
-	if(substri($s,0,1)=='-'){
+	if(substri($s,0,1)==$sign1){
 		$s=substri($s,1);
 		$neg=true;
 	}else{
 		$neg=false;
 	}
-	if(bc()){
-		$val=0;
-		for($i=0;$i<strleng($s);$i++){
-			$val=bcmul($val,$from);
-			$e=substri($s,$i,1);
-			if(!isset($de_table[$e])){
-				addmsg(WARN,'Unknown symbol.');
-				$de_table[$e]=0;
-			}
-			$val=bcadd($val,$de_table[$e],0);
+	if(in_array($pt1,explod('',$s))){
+		list($x,$y)=explod($pt1,$s);
+		$ptr=true;
+	}else{
+		$ptr=false;
+		$x=$s;
+	}
+	$val=0;
+	for($i=0;$i<strleng($x);$i++){
+		$val=bcmul($val,$from);
+		$e=substri($x,$i,1);
+		if(!isset($de_table[$e])){
+			addmsg(WARN,'Unknown symbol.');
+			$de_table[$e]=0;
 		}
-		$ret='';
+		$val=bcadd($val,$de_table[$e],0);
+	}
+	$ret='';
+	if($to==10){
+		for($i=0;$i<strlen($val);$i++){
+			$ret.=substri($symbol2,substr($val,$i,1),1);
+		}
+	}else{
 		while(!empty($val)){
 			$m=bcmod($val,$to);
 			$ret=substri($symbol2,$m,1).$ret;
 			$val=bcsub($val,$m,0);
 			$val=bcdiv($val,$to,0);
 		}
-		if($neg){
-			return '-'.$ret;
-		}
-		return $ret;
-	}else{
-		addmsg(ERR,'Sorry, Numeric Base need BCMath.');
-		return $s;
 	}
+	if($ret==''){
+		$ret='0';
+	}
+	if($neg){
+		$ret=$sign2.$ret;
+	}
+	if($ptr){
+		$pval=0;
+		$y=str_rev($y);
+		for($i=0;$i<strleng($y);$i++){
+			$e=substri($y,$i,1);
+			if(!isset($de_table[$e])){
+				addmsg(WARN,'Unknown symbol.');
+				$de_table[$e]=0;
+			}
+			$pval=bcadd($pval,$de_table[$e]);
+			$pval=bcdiv($pval,$from);
+		}
+		$pret=array();
+		if($to==10){
+			for($i=2;$i<strlen($pval);$i++){
+				$pret[]=substr($pval,$i,1);
+			}
+		}else{
+			$mod=1;
+			while(!empty($pval) && count($pret)<=$_POST['scale'] && bccomp($mod,'0')==1){
+				$mod=bcdiv($mod,$to);
+				list($r,$pval)=base_divmod($pval,$mod);
+				$pret[]=$r;
+			}
+		}
+		for($i=count($pret);$i>=0;$i--){
+			if($pret[$i]!=0){
+				break;
+			}
+		}
+		$pret2='';
+		for($j=0;$j<=$i;$j++){
+			$pret2.=substri($symbol2,$pret[$j],1);
+		}
+		if(count($pret)>0){
+			$ret.=$pt2.$pret2;	
+		}
+	}
+	return $ret;
+}
+function base_divmod($n,$mod){
+	$i=0;
+	$comp=bccomp($n,$mod);
+	while(($comp==0 || $comp==1) && bccomp($mod,'0')==1){
+		$n=bcsub($n,$mod);
+		$i++;
+		$comp=bccomp($n,$mod);
+	}
+	return array($i,$n);
 }
 
 function gen_rep($s){
@@ -1025,7 +1114,7 @@ function gen_rep($s){
 	$p=$patterns;
 	$r=$replacements;
 	for($i=0;$i<count($p);$i++){
-		$s=streplace(ent_de($p[$i]), ent_de($r[$i]), $s);
+		$s=streplace($p[$i], $r[$i], $s);
 	}
 	return $s;
 }
@@ -1036,7 +1125,7 @@ function gen_rep_de($s){
 	$r=$replacements;
 	$c=count($p);
 	for($i=0;$i<count($p);$i++){
-		$s=streplace(ent_de($r[$c-$i-1]), ent_de($p[$c-$i-1]), $s);
+		$s=streplace($r[$c-$i-1], $p[$c-$i-1], $s);
 	}
 	return $s;
 }
@@ -1300,8 +1389,8 @@ function statistics($s){
 function cac_pre($s){
 	global $func,$pi;
 	$pi='3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148086513282306647093844609550582231725359408128';
-	$func=array('dtor','root','abs','avedev','count','analyze','average','stdevp','stdev','round','floor','ceil','sqrt','log','sum','pow','exp','mod','sin','cos','tan','cot','sec','csc','ln','c');
-	$func_s=array('dtor','analyze','round','floor','ceil','sqrt','log','exp','sin','cos','tan','cot','sec','csc','ln');
+	$func=array('radians','degrees','root','abs','avedev','count','analyze','average','stdevp','stdev','round','floor','ceil','sqrt','log','sum','pow','exp','mod','sin','cos','tan','cot','sec','csc','ln','c');
+	$func_s=array('radians','degrees','analyze','round','floor','ceil','sqrt','log','exp','sin','cos','tan','cot','sec','csc','ln');
 	if($s==''){return 0;}
 	$m=$_POST['calculator'];
 	if($m==''){$m='x';}
@@ -1636,8 +1725,10 @@ function cac_func($f,$s,$tqwe=0){
 			$a[1]=0;
 		}
 		$r=round($a[0],$a[1]);	
-	}elseif($f=='dtor'){
+	}elseif($f=='radians'){
 		$r=bc()?bcdiv(bcmul($a[0],$pi),180):($a[0]*$pi)/180;
+	}elseif($f=='degrees'){
+		$r=bc()?bcdiv(bcmul($a[0],180),$pi):($a[0]*180)/$pi;
 	}elseif($f=='log'){
 		if($c>2){
 			addmsg(WARN,$tma);
@@ -1804,7 +1895,8 @@ function hex_de($s){
 	$s=preg_replace("/[^0-9A-Fa-f]/",'',$s);
 	$t='';
 	$s=str_repeat('0', (2-strlen($s)%2)%2).$s;
-	for($i=0;$i<(strlen($s)/2);$i++){
+	$n=strlen($s)/2;
+	for($i=0;$i<$n;$i++){
 		$t.=chr(hexdec(substr($s, $i*2, 2)));
 	}
 	return $t;
@@ -1836,12 +1928,16 @@ function ASCIIFilter($s){
 	return $r;
 }
 
-function sqr_en($s){
+function sqr($s,$codec=0){
+	if($codec==0){
+		$func='sqr_en_part';
+	}else{
+		$func='sqr_de_part';	
+	}
 	$l=strleng($s);
 	if($_POST['sqr_cl']=='auto'){
 		$r=$c=ceil(sqrt($l));
-		addmsg(INFO,'Rows: '.$r);
-		addmsg(INFO,'Colums: '.$c);
+		addmsg(INFO,'Rows/Colums: '.$r);
 	}else{
 		if(empty($_POST['sqr_r']) || empty($_POST['sqr_c'])){
 			addmsg(ERR,'Incorrect Rows/Columns');
@@ -1857,42 +1953,12 @@ function sqr_en($s){
 		$l-=$left;
 		$l/=$con;
 		for($i=0;$i<$l;$i++){
-			$ret.=sqr_en_part(substri($s,$i*$con,$con),$r,$c);
+			$ret.=$func(substri($s,$i*$con,$con),$r,$c);
 		}
-		$ret.=sqr_en_part(substri($s,$i*$con),$r,$c);
+		$ret.=$func(substri($s,$i*$con),$r,$c);
 		return $ret;
 	}else{
-		return sqr_en_part($s,$r,$c);
-	}
-}
-
-function sqr_de($s){
-	$l=strleng($s);
-	if($_POST['sqr_cl']=='auto'){
-		$r=$c=ceil(sqrt($l));
-		addmsg(INFO,'Rows: '.$r);
-		addmsg(INFO,'Colums: '.$c);
-	}else{
-		if(empty($_POST['sqr_r']) || empty($_POST['sqr_c'])){
-			addmsg(ERR,'Incorrect Rows/Columns');
-			return $s;
-		}
-		$r=$_POST['sqr_r'];
-		$c=$_POST['sqr_c'];
-	}
-	$con=$_POST['sqr_r']*$_POST['sqr_c'];
-	if($_POST['sqr_cl']=='man' && $l>$con){
-		$ret='';
-		$left=$l%$con;
-		$l-=$left;
-		$l/=$con;
-		for($i=0;$i<$l;$i++){
-			$ret.=sqr_de_part(substri($s,$i*$con,$con),$r,$c);
-		}
-		$ret.=sqr_de_part(substri($s,$i*$con),$r,$c);
-		return $ret;
-	}else{
-		return sqr_de_part($s,$r,$c);
+		return $func($s,$r,$c);
 	}
 }
 
@@ -2145,7 +2211,7 @@ function en($method, $s){
 		case 'msk': $s=network($s); break;
 		case 'ref': $s=sqr_reflect($s); break;
 		case 'che': $s=chewing($s); break;
-		case 'rf'; $s=sqr_en($s); break;
+		case 'rf'; $s=sqr($s,0); break;
 		case 'cac': $s=cac_pre($s); break;
 		case 'mmtp': $s=matrix_multiply($s); break;
 		case 'mro': $s=matrix_rotate($s,0); break;
@@ -2190,7 +2256,7 @@ function de($method, $s){
 		case 'bbd': break;
 		case 'rpt': break;
 		case 'unq': $s=uniq($s,1); break;
-		case 'rf'; $s=sqr_de($s); break;
+		case 'rf'; $s=sqr($s,1); break;
 		case 'pcr': break;
 		case 'acc': $s=accumulation($s,1); break;
 		case 'uue': $s=convert_uudecode($s); break;
@@ -2417,8 +2483,16 @@ if(isset($_POST['action'])){
 		}
 		$oridata=$s;
 	}
-	$_POST['base_from']+=0;
-	$_POST['base_to']+=0;
+	$_POST['base_from']=abs(intval($_POST['base_from']));
+	if($_POST['base_from']<2){
+		$_POST['base_from']=2;
+		addmsg(ERR,'Numeric base should be >=2.');
+	}
+	$_POST['base_to']=abs(intval($_POST['base_to']));
+	if($_POST['base_to']<2){
+		$_POST['base_to']=2;
+		addmsg(ERR,'Numeric base should be >=2.');
+	}
 	$_POST['rot']=$_POST['rot']%26;
 	$_POST['nrot']=$_POST['nrot']%10;
 	$method=$_REQUEST['method'];
@@ -2429,12 +2503,24 @@ if(isset($_POST['action'])){
 	$_POST['transpose']=$_POST['transpose']%12;
 	$_POST['rpt']+=0;
 	$_POST['stmwthl']+=0;
+	$_POST['scale']=abs(intval($_POST['scale']));
+	if($_POST['scale']>200){
+		$_POST['scale']=200;
+		addmsg(INFO,'The maximum of precision is 200.');
+	}
+	if(bc()){
+		bcscale($_POST['scale']);
+	}
+	$_POST['base_point1']=substri($_POST['base_point1'],0,1);
+	$_POST['base_point2']=substri($_POST['base_point2'],0,1);
+	$_POST['base_sign1']=substri($_POST['base_sign1'],0,1);
+	$_POST['base_sign2']=substri($_POST['base_sign2'],0,1);
 	$_POST['sepr']=str_replace("\r\n","\n",$_POST['sepr']);
 	$_POST['ssep']=str_replace("\r\n","\n",$_POST['ssep']);
 	$_POST['ssep_de']=explod("\n",$_POST['ssep']);
-for($i=0;$i<count($_POST['ssep_de']);$i++){
-	$_POST['ssep_de'][$i]=ent_de($_POST['ssep_de'][$i]);
-}
+	for($i=0;$i<count($_POST['ssep_de']);$i++){
+		$_POST['ssep_de'][$i]=ent_de($_POST['ssep_de'][$i]);
+	}
 	$_POST['sqr_r']=intval($_POST['sqr_r']);
 	$_POST['sqr_c']=intval($_POST['sqr_c']);
 	$_POST['mut_l']=abs(intval($_POST['mut_l']));
@@ -2447,10 +2533,14 @@ for($i=0;$i<count($_POST['ssep_de']);$i++){
 	}
 	$tmp=$GLOBALS['sep_array'];
 	sort($tmp);
+	$flag=false;
 	for($i=1;$i<count($tmp);$i++){
 		if($tmp[$i]==$tmp[$i-1]){
-			addmsg(WARN,'Iterant Separator');
+			$flag=true;
 		}
+	}
+	if($flag){
+		addmsg(WARN,'Duplicated Separator');
 	}
 	if(trim($_POST['batch'])==''){
 		$_POST['batch2']=($_POST['mode']=="en"?'e':'d').'-'.$method;
@@ -2477,8 +2567,10 @@ for($i=0;$i<count($_POST['ssep_de']);$i++){
 	$_POST['casei']='off';
 	$_POST['rot']=13;
 	$_POST['nrot']=5;
-	$_POST['base_symbol1']='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-	$_POST['base_symbol2']=$_POST['base_symbol1'];
+	$_POST['base_symbol1']=$_POST['base_symbol2']='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	$_POST['base_point1']=$_POST['base_point2']='.';
+	$_POST['base_sign1']=$_POST['base_sign2']='-';
+	$_POST['scale']=50;
 	$_POST['base_from']=10;
 	$_POST['base_to']=16;
 	if(isset($_REQUEST['method'])){
@@ -2491,7 +2583,7 @@ for($i=0;$i<count($_POST['ssep_de']);$i++){
 		$tmp=explode(',',$_SERVER['HTTP_ACCEPT_CHARSET']);
 		$_POST['charset']=$tmp[0];
 	}else{
-		$_POST['charset']="big5";
+		$_POST['charset']='utf-8';
 	}
 	$dir="LTR";
 	$_POST['process']='en';
@@ -2528,8 +2620,14 @@ for($i=0;$i<count($_POST['ssep_de']);$i++){
 }
 $pattern=str_replace("\r\n","\n",$_POST['pattern']);
 $patterns=explod("\n",$pattern);
+for($i=0;$i<count($patterns);$i++){
+	$patterns[$i]=ent_de($patterns[$i]);
+}
 $replacement=str_replace("\r\n","\n",$_POST['replacement']);
 $replacements=explod("\n",$replacement);
+for($i=0;$i<count($replacements);$i++){
+	$replacements[$i]=ent_de($replacements[$i]);
+}
 if(!isset($_POST['order'])){
 	$_POST['order']="12345678";
 }else{
@@ -2994,6 +3092,7 @@ for($i=0;$i<count($methods_table);$i++){
 <?chkbx('scr','Skip &lt;CR&gt;');?><br />
 <?chkbx('ssp','Skip HtmlSpecialChars');?><br />
 <?chkbx('ibk','Enable Undo');?><br />
+Precision: <input type="text" name="scale" size="2" value="<?echo $_POST['scale'];?>" /><br />
 Square Padding: <input type="text" size="10" name="mfix_pad" value="<?echo $_POST['mfix_pad'];?>" />
 </span>
 <span class="block">
@@ -3026,9 +3125,11 @@ echo '<option value="'.$i.'"'.(($_POST['nrot']==$i)?' selected="selected"':'').'
 }
 ?></select></td></tr>
 <tr><td>StringTrimWidth</td><td>Width:<input type="text" name="stmwthl" size="2" value="<?echo $_POST['stmwthl'];?>" /> Append:<input type="text" name="stmwtha" size="5" value="<?echo $_POST['stmwtha'];?>" /></td></tr>
-<tr><td>Numeric Base:</td><td>From<input type="text" name="base_from" value="<?echo $_POST['base_from'];?>" /> To<input type="text" name="base_to" value="<?echo $_POST['base_to'];?>" /></td></tr>
-<tr><td>From Symbols</td><td><input type="text" name="base_symbol1" size="80" value="<?echo $_POST['base_symbol1'];?>" /></td></tr>
-<tr><td>To Symbols</td><td><input type="text" name="base_symbol2" size="80" value="<?echo $_POST['base_symbol2'];?>" /></td></tr>
+<tr><td>Numeric Base:</td><td>From<input type="text" name="base_from" size="2" value="<?echo $_POST['base_from'];?>" /> To<input type="text" name="base_to" size="2" value="<?echo $_POST['base_to'];?>" /></td></tr>
+<tr><td>From Symbols</td><td><input type="text" name="base_symbol1" size="80" value="<?echo $_POST['base_symbol1'];?>" /><br />
+Sign<input type="text" name="base_sign1" size="2" value="<?echo $_POST['base_sign1'];?>" /> Point<input type="text" name="base_point1" size="2" value="<?echo $_POST['base_point1'];?>" /></td></tr>
+<tr><td>To Symbols</td><td><input type="text" name="base_symbol2" size="80" value="<?echo $_POST['base_symbol2'];?>" /><br />
+Sign<input type="text" name="base_sign2" size="2" value="<?echo $_POST['base_sign2'];?>" /> Point<input type="text" name="base_point2" size="2" value="<?echo $_POST['base_point2'];?>" /></td></tr></td></tr>
 </table></span>
 <span class="block">
 <table>
