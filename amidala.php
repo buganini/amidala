@@ -25,8 +25,9 @@
 
 $time_begin=mtime();
 #<php>
-$ver_serial='2007010200';
+$ver_serial='2007011600';
 ini_set('display_errors', '0');
+#error_reporting(E_ALL & ~E_NOTICE);
 set_magic_quotes_runtime(0);
 define('ERR','Error');
 define('WARN','Warning');
@@ -157,6 +158,10 @@ function cancel(){
 }
 
 function bbs2html_dc($s){
+if(strtolower($_POST['ccharset'])!='big5'){
+	addmsg(ERR,'Input charset must be Big5');
+	return $s;
+}
 $flag=0;
 $clr=array('000','B00','0B0','BB0','00B','B0B','0BB','BBB');
 $color='BBB';
@@ -168,7 +173,7 @@ $rv=0;
 $dec='';
 if($ul==0 && $sh==0){$dec=' none';}
 $style='color: #'.$color.'; text-decoration:'.$dec.'; background-color: #'.$bg.';';
-$r='<html><head><meta http-equiv="Content-Type" content="text/html; charset='.$_POST['charset'].'">
+$r='<html><head><meta http-equiv="Content-Type" content="text/html; charset=big5">
 <style type="text/css">
 a {
 font-family: monospace;
@@ -192,7 +197,7 @@ for($i=0;$i<strlen($s);$i++){
 			$tmp.=substr($s,$j,1);
 			$j++;
 		}
-if(eregi("^big5$",$_POST['ccharset']) && $flag==1){
+if($flag==1){
 	$h.=substr($s,$j+1,1);
 	$bak=$style;
 	$i++;
@@ -252,7 +257,7 @@ if(eregi("^big5$",$_POST['ccharset']) && $flag==1){
 			$style='color: #'.$color.'; text-decoration:'.$dec.'; background-color: #'.$bg.';';
 			if($hl==1){$color=str_replace("F","B",$color); $color=str_replace("5","0",$color);}
 			if($rv==1){$p=$color; $color=$bg; $bg=$p;}
-if(eregi("^big5$",$_POST['ccharset']) && $flag==1){
+if($flag==1){
 	$r.=chr(0).'</a><a class="dc" style="'.$bak.'">'.$h.'</a><a style="'.$style.'">'.$h;
 	$flag=0;
 }else{
@@ -260,10 +265,10 @@ if(eregi("^big5$",$_POST['ccharset']) && $flag==1){
 }
 		}
 		$i=$i+$l+2;
-	}elseif(eregi("^big5$",$_POST['ccharset']) && preg_match("/[\xA1-\xF9][\x40-\x7E\xA1-\xFE]/",substr($s,$i,2))){
+	}elseif(preg_match("/[\xA1-\xF9][\x40-\x7E\xA1-\xFE]/",substr($s,$i,2))){
 		$r.=substr($s,$i,2);
 		$i++;
-	}elseif(eregi("^big5$",$_POST['ccharset']) && preg_match("/[\xA1-\xF9]\x1B/",substr($s,$i,2))){
+	}elseif(preg_match("/[\xA1-\xF9]\x1B/",substr($s,$i,2))){
 		$h=substr($s,$i,1);
 		$flag=1;
 	}else{
@@ -980,19 +985,23 @@ function pcre_rep($s){
 	return $s;
 }
 
-function base_conv($s,$flag=0){
+function base_conv($s,$flag=0,$from=NULL,$symbol1=NULL,$to=NULL,$symbol2=NULL){
 	if(!bc()){
 		addmsg(ERR,'Sorry, Numeric Base need BCMath.');
 		return $s;
 	}
-	$from=$_POST['base_from'];
-	$to=$_POST['base_to'];
-	$symbol1=$_POST['base_symbol1'];
-	$symbol2=$_POST['base_symbol2'];
-	$pt1=$_POST['base_point1'];
-	$pt2=$_POST['base_point2'];
-	$sign1=$_POST['base_sign1'];
-	$sign2=$_POST['base_sign2'];
+	$pt1=$pt2='.';
+	$sign1=$sign2='-';
+	if($from===NULL){
+		$from=$_POST['base_from'];
+		$to=$_POST['base_to'];
+		$symbol1=$_POST['num_base_symbol1'];
+		$symbol2=$_POST['num_base_symbol2'];
+		$pt1=$_POST['base_point1'];
+		$pt2=$_POST['base_point2'];
+		$sign1=$_POST['base_sign1'];
+		$sign2=$_POST['base_sign2'];
+	}
 	if($flag==1){
 		$tmp=$from;
 		$from=$to;
@@ -1152,27 +1161,48 @@ function key_xor($a,$b){
 	}
 	return $r;
 }
-function dna_en($s){
-	$table=array("00"=>'A',"01"=>'T',"10"=>'G',"11"=>'C');
+
+function base_en($s){
+	if(pow(2,$_POST['base_bit'])>strleng($_POST['base_symbol'])){
+		addmsg(ERR,'Symbol not enough');
+		return $s;
+	}
 	$r='';
 	$s=bin_en($s);
-	for($i=0;$i<(strlen($s)/2);$i++){
-		$r.=$table[substr($s,$i*2,2)];
+	$s.=str_repeat('0',($_POST['base_bit']-(strlen($s)%$_POST['base_bit']))%$_POST['base_bit']);
+	$len=strlen($s)/$_POST['base_bit'];
+	for($i=0;$i<$len;$i++){
+		$r.=substri($_POST['base_symbol'],base_conv(substr($s,$i*$_POST['base_bit'],$_POST['base_bit']),0,2,'01',10,'0123456789'),1);
 	}
+	$padn=cac_func('lcmc','8,'.$_POST['base_bit'],1)/$_POST['base_bit'];
+	$r.=str_repeat($_POST['base_pad'],($padn-(strleng($r)%$padn))%$padn);
 	return $r;
 }
 
-function dna_de($s){
-	$table=array('A'=>"00",'T'=>"01",'G'=>"10",'C'=>"11");
-	$r='';
-	$s=strtoupper($s);
-	$s=preg_replace("/[^ATCG]/",'',$s);
-	for($i=0;$i<strlen($s);$i++){
-		$r.=$table[substr($s,$i,1)];
+function base_de($s){
+	if(pow(2,$_POST['base_bit'])>strleng($_POST['base_symbol'])){
+		addmsg(ERR,'Symbol not enough');
+		return $s;
 	}
-	return bin_de($r);
+	for($i=0;$i<strleng($_POST['base_symbol']);$i++){
+		$e=substri($_POST['base_symbol'],$i,1);
+		$list[$i]=$e;
+		$t=base_conv($i,0,10,'0123456789',2,'01');
+		$table[$e]=str_repeat('0',$_POST['base_bit']-strlen($t)).$t;
+	}
+	$so='';
+	$len=strleng($s);
+	for($i=0;$i<$len;$i++){
+		$e=substri($s,$i,1);
+		if(in_array($e,$list)){
+			$so.=$table[$e];
+		}
+	}
+	$len=strlen($so);
+	$len=floor($len/8)*8;
+	$so=substr($so,0,$len);
+	return bin_de($so);
 }
-
 
 function chewing($s){
 	$table=array('1'=>'12549;', 'q'=>'12550;', 'a'=>'12551;', 'z'=>'12552;', '2'=>'12553;', 'w'=>'12554;', 's'=>'12555;', 'x'=>'12556;', 'e'=>'12557;', 'd'=>'12558;', 'c'=>'12559;', 'r'=>'12560;', 'f'=>'12561;', 'v'=>'12562;', '5'=>'12563;', 't'=>'12564;', 'g'=>'12565;', 'b'=>'12566;', 'y'=>'12567;', 'h'=>'12568;', 'n'=>'12569;', 'u'=>'12583;', 'j'=>'12584;', 'm'=>'12585;', '8'=>'12570;', 'i'=>'12571;', 'k'=>'12572;', ','=>'12573;', '9'=>'12574;', 'o'=>'12575;', 'l'=>'12576;', '.'=>'12577;', '0'=>'12578;', 'p'=>'12579;', ';'=>'12580;', '/'=>'12581;', '-'=>'12582;', ' '=>' ', '6'=>'714; ', '3'=>'711; ', '4'=>'715; ', '7'=>'729; ');
@@ -2101,11 +2131,15 @@ function str_mutate($s){
 		$e=substri($s,$i,1);
 		if(preg_match('/[^a-z]/is',$e) || strlen($e)>1){
 			$a=$c='';
-			if($_POST['mut_l']>0){
-			$a=substr($tmp,0,$_POST['mut_l']);}
-			if($_POST['mut_r']>0){
-			$c=substr($tmp,$_POST['mut_r']*-1);}
-			$tmp=substr($tmp,$_POST['mut_l'],strlen($tmp)-$_POST['mut_l']-$_POST['mut_r']);
+			if(strlen($tmp)>=$_POST['mut_l']+$_POST['mut_r']){
+				if($_POST['mut_l']>0){
+				$a=substr($tmp,0,$_POST['mut_l']);
+				}
+				if($_POST['mut_r']>0){
+				$c=substr($tmp,$_POST['mut_r']*-1);
+				}
+				$tmp=substr($tmp,$_POST['mut_l'],strlen($tmp)-$_POST['mut_l']-$_POST['mut_r']);
+			}
 			if($_POST['mut_fit']=='on'){
 				$tmp=str_mut_fit($tmp);
 			}else{
@@ -2183,7 +2217,6 @@ function en($method, $s){
 		case 'dec': $s=dec_en($s); break;
 		case 'oct': $s=oct_en($s); break;
 		case 'hex': $s=hex_en($s); break;
-		case 'b64': $s=base64_encode($s); break;
 		case 'rot': $s=rotate($s,$_POST['rot'],$_POST['nrot']); break;
 		case 'url': $s=($_POST['url_raw']=='on')?rawurlencode($s):urlencode($s); break;
 		case 'raw': break;
@@ -2191,7 +2224,8 @@ function en($method, $s){
 		case 'rpt': $s=str_repeat($s,$_POST['rpt']); break;
 		case 'rev': $s=str_rev($s); break;
 		case 'crv': $s=case_rev($s); break;
-		case 'base': $s=base_conv($s,0); break;
+		case 'nbase': $s=base_conv($s,0); break;
+		case 'base': $s=base_en($s); break;
 		case 'rep': $s=gen_rep($s); break;
 		case 'pcr': $s=pcre_rep($s); break;
 		case 'pcm': $s=pcre_mat($s); break;
@@ -2226,7 +2260,6 @@ function en($method, $s){
 		case 'miv': $s=matrix_inverse($s); break;
 		case 'mtr': $s=matrix_transpose($s); break;
 		case 'ascii': $s=ASCIIFilter($s); break;
-		case 'dna': $s=dna_en($s); break;
 		case 'key': $s=key_xor($_POST['key'],$s); break;
 		case 'bre': $s=bit_rev($s); break;
 		case 'bod': $s=bitorder_en($_POST['order'],$s); break;
@@ -2244,7 +2277,6 @@ function de($method, $s){
 		case 'dec': $s=dec_de($s); break;
 		case 'oct': $s=oct_de($s); break;
 		case 'hex': $s=hex_de($s); break;
-		case 'b64': $s=base64_decode($s); break;
 		case 'rot': $s=rotate($s,26-$_POST['rot'],10-$_POST['nrot']); break;
 		case 'url': $s=($_POST['url_raw']=='on')?rawurldecode($s):urldecode($s); break;
 		case 'ur2': $s=urldecode($s); break;
@@ -2253,7 +2285,8 @@ function de($method, $s){
 		case 'rev': $s=str_rev($s); break;
 		case 'spe': $s=html_entity_decode($s); break;
 		case 'hen': break;
-		case 'base': $s=base_conv($s,1); break;
+		case 'nbase': $s=base_conv($s,1); break;
+		case 'base': $s=base_de($s); break;
 		case 'md5': addmsg(INFO,'<a href="http://www.md5lookup.com/?category=main&page=search" target="_blank">http://www.md5lookup.com</a>'); break;
 		case 'stu': break;
 		case 'crv': $s=case_rev($s); break;
@@ -2290,7 +2323,6 @@ function de($method, $s){
 		case 'sln': break;
 		case 'swd': break;
 		case 'che': break;
-		case 'dna': $s=dna_de($s); break;
 		case 'key': $s=key_xor($_POST['key'],$s); break;
 		case 'bre': $s=bit_rev($s); break;
 		case 'bod': $s=bitorder_de($_POST['order'],$s); break;
@@ -2490,6 +2522,8 @@ if(isset($_POST['action'])){
 		}
 		$oridata=$s;
 	}
+	$_POST['base_bit']=abs(intval($_POST['base_bit']));
+	$_POST['base_pad']=substri($_POST['base_pad'],0,1);
 	$_POST['base_from']=abs(intval($_POST['base_from']));
 	if($_POST['base_from']<2){
 		$_POST['base_from']=2;
@@ -2575,9 +2609,12 @@ if(isset($_POST['action'])){
 	$_POST['casei']='off';
 	$_POST['rot']=13;
 	$_POST['nrot']=5;
-	$_POST['base_symbol1']=$_POST['base_symbol2']='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	$_POST['num_base_symbol1']=$_POST['num_base_symbol2']='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 	$_POST['base_point1']=$_POST['base_point2']='.';
 	$_POST['base_sign1']=$_POST['base_sign2']='-';
+	$_POST['base_bit']=6;
+	$_POST['base_symbol']='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+	$_POST['base_pad']='=';
 	$_POST['scale']=50;
 	$_POST['base_from']=10;
 	$_POST['base_to']=16;
@@ -2587,12 +2624,15 @@ if(isset($_POST['action'])){
 		$method='raw';
 	}
 	$_POST['scr']="on";
-	if(!empty($_SERVER['HTTP_ACCEPT_CHARSET'])){
+	if(isset($_GET['charset'])){
+		$_POST['charset']=$_GET['charset'];
+	}elseif(!empty($_SERVER['HTTP_ACCEPT_CHARSET'])){
 		$tmp=explode(',',$_SERVER['HTTP_ACCEPT_CHARSET']);
 		$_POST['charset']=$tmp[0];
 	}else{
 		$_POST['charset']='utf-8';
 	}
+	$_POST['out']='text';
 	$dir="LTR";
 	$_POST['process']='en';
 	$_POST['mode']='en';
@@ -2601,7 +2641,6 @@ if(isset($_POST['action'])){
 	$_POST['trows']=15;
 	$_POST['tcols']=35;
 	$_POST['transpose']=0;
-	$_POST['out']="text";
 	$_POST['rpt']=1;
 	$_POST['ssep']="\\n\\n\n\\n\n\\t";
 	$_POST['ttb_brd']="on";
@@ -2971,11 +3010,6 @@ getobj('replacement').cols=70;
 <form method="post" action="<?echo $_SERVER['PHP_SELF'];?>" name="form" id="form" enctype="multipart/form-data">
 <input type="hidden" name="action" value="y" />
 <input type="hidden" name="curtab" id="curtab" value="<?echo $_POST['curtab'];?>" />
-<?
-if(isset($_REQUEST['debug'])){
-echo '<input type="hidden" name="debug" value="1" />';
-}
-?>
 <table><tr>
 <td style="width:12em;">
 <fieldset><legend>Assistance</legend>
@@ -3026,7 +3060,7 @@ array('tra','Transpose','no'),
 array('msk','Network','ow'),
 array('ttb','To Table','ow'),
 array('cac','Calculator','ow'),
-array('base','Numeric Base','no'),
+array('nbase','Numeric Base','no'),
 array('det','Determinant Value','ow'),
 array('mmtp','Matrix Multiplication','ow'),
 array('mtr','Matrix/Square Transpose','ed'),
@@ -3064,8 +3098,7 @@ array('crc16','CRC16','ow'),
 array('crc32','CRC32','ow'),
 array('url','URL','no'),
 array('uue','UUEncode','no'),
-array('b64','Base64','no'),
-array('dna','DNA','no'),
+array('base','Base','no'),
 array('bin','Bin','no'),
 array('oct','Oct','no'),
 array('dec','Dec','no'),
@@ -3135,10 +3168,12 @@ echo '<option value="'.$i.'"'.(($_POST['nrot']==$i)?' selected="selected"':'').'
 }
 ?></select></td></tr>
 <tr><td>StringTrimWidth</td><td>Width:<input type="text" name="stmwthl" size="2" value="<?echo $_POST['stmwthl'];?>" /> Append:<input type="text" name="stmwtha" size="5" value="<?echo $_POST['stmwtha'];?>" /></td></tr>
+<tr><td>Base:</td><td>Bits<input type="text" name="base_bit" size="2" value="<?echo $_POST['base_bit'];?>" /> Pad<input type="text" name="base_pad" size="2" value="<?echo $_POST['base_pad'];?>" /><br />
+Symbol<input type="text" name="base_symbol" size="80" value="<?echo $_POST['base_symbol'];?>" /></td></tr>
 <tr><td>Numeric Base:</td><td>From<input type="text" name="base_from" size="2" value="<?echo $_POST['base_from'];?>" /> To<input type="text" name="base_to" size="2" value="<?echo $_POST['base_to'];?>" /></td></tr>
-<tr><td>From Symbols</td><td><input type="text" name="base_symbol1" size="80" value="<?echo $_POST['base_symbol1'];?>" /><br />
+<tr><td>From Symbols</td><td><input type="text" name="num_base_symbol1" size="80" value="<?echo $_POST['num_base_symbol1'];?>" /><br />
 Sign<input type="text" name="base_sign1" size="2" value="<?echo $_POST['base_sign1'];?>" /> Point<input type="text" name="base_point1" size="2" value="<?echo $_POST['base_point1'];?>" /></td></tr>
-<tr><td>To Symbols</td><td><input type="text" name="base_symbol2" size="80" value="<?echo $_POST['base_symbol2'];?>" /><br />
+<tr><td>To Symbols</td><td><input type="text" name="num_base_symbol2" size="80" value="<?echo $_POST['num_base_symbol2'];?>" /><br />
 Sign<input type="text" name="base_sign2" size="2" value="<?echo $_POST['base_sign2'];?>" /> Point<input type="text" name="base_point2" size="2" value="<?echo $_POST['base_point2'];?>" /></td></tr></td></tr>
 </table></span>
 <span class="block">
