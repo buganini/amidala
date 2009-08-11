@@ -25,23 +25,28 @@
 
 $time_begin=mtime();
 #<php>
-$ver_serial='2007011600';
+$ver_serial='2007011900';
 ini_set('display_errors', '0');
 #error_reporting(E_ALL & ~E_NOTICE);
 set_magic_quotes_runtime(0);
 define('ERR','Error');
 define('WARN','Warning');
 define('INFO','Information');
-
+session_start();
 if(get_magic_quotes_gpc()==1){
 	foreach($_POST as $key => $val){
 		$_POST[$key]=stripslashes($_POST[$key]);
 	}
 }
-if(ip()=='127.0.0.1'){
+
+if(local()){
 	set_time_limit(0);
 }else{
 	set_time_limit(180);
+}
+
+function local(){
+	return (ip()=='127.0.0.1')?true:false;
 }
 
 function autoslash($s){
@@ -64,12 +69,6 @@ if(!mb()){
 	$_POST['mbstring']='off';
 }
 
-if(!function_exists('file_get_contents')){
-	function file_get_contents($a){
-		return implode('',file($a));
-	}
-}
-#<function>
 $cancel=0;
 
 function mtime(){
@@ -78,58 +77,46 @@ function mtime(){
 }
 
 function ip(){
-	if(!empty($_SERVER['HTTP_X_FORWARDED_FOR'])){
-		return $_SERVER['HTTP_X_FORWARDED_FOR'];
-	}else{
-		return $_SERVER['REMOTE_ADDR'];
-	}
+return empty($_SERVER['HTTP_X_FORWARDED_FOR'])?$_SERVER['REMOTE_ADDR']:$_SERVER['HTTP_X_FORWARDED_FOR'];
 }
 
 function pcre(){
-if(function_exists('preg_replace')){
-return TRUE;
-}else{
-return FALSE;
-}
+return function_exists('preg_replace')?TRUE:FALSE;
 }
 
 function bc(){
-if(function_exists('bcadd')){
-return TRUE;
-}else{
-return FALSE;
+return function_exists('bcadd')?TRUE:FALSE;
 }
-}
+
 function mb(){
-if(function_exists('mb_internal_encoding')){
-return TRUE;
-}else{
-return FALSE;
-}
+return function_exists('mb_internal_encoding')?TRUE:FALSE;
 }
 
 function mbs(){
-if(mb() && $_POST['mbstring']=='on'){
-return TRUE;
-}else{
-return FALSE;
+return (mb() && $_POST['mbstring']=='on')?TRUE:FALSE;
 }
+
+function counter($s){
+	$arr[0]=$s;
+	for($i=0;$i<count($_POST['ssep_de']);$i++){
+		$ct=count($arr);
+		for($j=0;$j<$ct;$j++){
+			$tmp=explod($_POST['ssep_de'][$i],$arr[$j]);
+			$arr[$j]=$tmp[0];
+			for($k=1;$k<count($tmp);$k++){
+				$arr[]=$tmp[$k];
+			}
+		}
+	}
+	return count($arr);
 }
 
 function strwidth($s){
-	if(mbs()){
-		return mb_strwidth($s);
-	}else{
-		return strlen($s);
-	}
+return mbs()?mb_strwidth($s):strlen($s);
 }
 
 function strleng($s){
-	if(mbs()){
-		return mb_strlen($s);
-	}else{
-		return strlen($s);
-	}
+return mbs()?mb_strlen($s):strlen($s);
 }
 
 function substri($a,$b,$c=NULL){
@@ -149,12 +136,8 @@ function addmsg($t,$s,$f=0){
 }
 
 function cancel(){
-	global $cancel;
-	if($cancel==1){
-		return TRUE;
-	}else{
-		return FALSE;
-	}
+global $cancel;
+return ($cancel==1)?TRUE:FALSE;
 }
 
 function bbs2html_dc($s){
@@ -1107,6 +1090,7 @@ function base_conv($s,$flag=0,$from=NULL,$symbol1=NULL,$to=NULL,$symbol2=NULL){
 	}
 	return $ret;
 }
+
 function base_divmod($n,$mod){
 	$i=0;
 	$comp=bccomp($n,$mod);
@@ -1199,7 +1183,7 @@ function base_de($s){
 		}
 	}
 	$len=strlen($so);
-	$len=floor($len/8)*8;
+	$len-=$len%8;
 	$so=substr($so,0,$len);
 	return bin_de($so);
 }
@@ -1287,6 +1271,7 @@ function bin_de($s){
 	}
 	return $t;
 }
+
 if(mb()){
 	if(!function_exists('mb_explode')){
 		function mb_explode($a,$s){
@@ -1301,14 +1286,14 @@ if(mb()){
 			return $ret;
 		}
 	}
-if(!function_exists('mb_stripos')){
-	function mb_stripos($a,$b){
-		$a=mb_strtolower($a);
-		$b=mb_strtolower($b);
-		$c=mb_strpos($a,$b);
-		return $c;
+	if(!function_exists('mb_stripos')){
+		function mb_stripos($a,$b){
+			$a=mb_strtolower($a);
+			$b=mb_strtolower($b);
+			$c=mb_strpos($a,$b);
+			return $c;
+		}
 	}
-}
 	function mb_iexplode($a,$s){
 		$ret=array();
 		$c=0;
@@ -2245,7 +2230,7 @@ function en($method, $s){
 		case 'acc': $s=accumulation($s,0); break;
 		case 'stl': $s=mbs()?mb_strtolower($s):strtolower($s); break;
 		case 'ucw': $s=ucwords($s); break;
-		case 'sln': $s=strleng($s); break;
+		case 'ctr': $s=counter($s); break;
 		case 'swd': $s=strwidth($s); break;
 		case 'cor': $s=correct($s); break;
 		case 'det': $s=determinant($s); break;
@@ -2320,7 +2305,7 @@ function de($method, $s){
 		case 'mro': $s=matrix_rotate($s,1); break;
 		case 'mtr': $s=matrix_transpose($s); break;
 		case 'cac': break;
-		case 'sln': break;
+		case 'ctr': break;
 		case 'swd': break;
 		case 'che': break;
 		case 'key': $s=key_xor($_POST['key'],$s); break;
@@ -2372,8 +2357,8 @@ function in_opt_range($n,$lv,$x){
 	for($i=0;$i<count($arr);$i++){
 		$flag=FALSE;
 		$arr[$i]=preg_replace('/[^0-9\\-?!*$%+]/','',$arr[$i]);
-		if(substr($arr[$i],0,1)=='!'){
-			$flag=TRUE;
+		while(substr($arr[$i],0,1)=='!'){
+			$flag=!$flag;
 			$arr[$i]=substr($arr[$i],1);
 		}
 		$arr[$i]=str_replace('!','',$arr[$i]);
@@ -2462,7 +2447,7 @@ function pro($s,$lv){
 	$ct=0;
 	$x=count($a);
 	for($i=0;$i<$x;$i+=$step){
-		if($_POST['opt_oper']!='on' || in_opt_range($ct,$lv,$x)){
+		if(in_opt_range($ct,$lv,$x)){
 			$a[$i]=pro($a[$i],$lv+1);
 		}
 		$ct++;
@@ -2501,17 +2486,27 @@ if($_GET['appendix']=="source"){
 	die($r);
 }
 #<init>
-if(isset($_POST['action'])){
+if($_POST['action']=='yes'){
 	if(mbs()){
 		if(!mb_internal_encoding($_POST['ccharset'])){
 			addmsg(WARN,'Failed setting MBString encoding. Maybe the charset you are using is not support.');
 			$_POST['mbstring']='off';
 		}
 	}
+	$_POST['in_sess_slot']=intval($_POST['in_sess_slot'])%8;
+	$_POST['out_sess_slot']=intval($_POST['out_sess_slot'])%8;
 	if($_POST['input']=='file' && $_FILES['fin']['tmp_name']!="none" && $_FILES['fin']['tmp_name']!="" && $_FILES['fin']['size']>0){
 		$s=file_get_contents($_FILES['fin']['tmp_name']);
 		unlink($_FILES['fin']['tmp_name']);
 		$oridata='Please Re-Upload';
+	}elseif($_POST['input']=='session' && isset($_SESSION['data'])){
+		$s=$_SESSION['data'][$_POST['in_sess_slot']];
+		if($_POST['ibk']=='on'){
+			$backup=$s;
+		}else{
+			$backup='';
+		}
+		$oridata=$s;		
 	}else{
 		$_POST['input']='text';
 		$s=$_POST['text'];
@@ -2545,12 +2540,14 @@ if(isset($_POST['action'])){
 	$_POST['rpt']+=0;
 	$_POST['stmwthl']+=0;
 	$_POST['scale']=abs(intval($_POST['scale']));
-	if($_POST['scale']>200){
-		$_POST['scale']=200;
-		addmsg(INFO,'The maximum of precision is 200.');
-	}
-	if(bc()){
-		bcscale($_POST['scale']);
+	if(local() || $_POST['scale']<=50){
+		if(bc()){
+			bcscale($_POST['scale']);
+		}
+		ini_set('precision',$_POST['scale']);
+	}else{
+		$_POST['scale']=50;
+		addmsg(WARN,'Remote user\'s precision is limited to 50.');
 	}
 	$_POST['base_point1']=substri($_POST['base_point1'],0,1);
 	$_POST['base_point2']=substri($_POST['base_point2'],0,1);
@@ -2570,7 +2567,9 @@ if(isset($_POST['action'])){
 	$GLOBALS['sep_array']=explod("\n",$_POST['sepr']);
 	if($_POST['sep']=="on"){
 	for($i=0;$i<count($GLOBALS['sep_array']);$i++){
-		$GLOBALS['sep_array'][$i]=ent_de($GLOBALS['sep_array'][$i]);
+		$tmp=explode("\t",$GLOBALS['sep_array'][$i]);
+		$GLOBALS['sep_array'][$i]=ent_de($tmp[0]);
+		$GLOBALS['opt_oper'][$i]=$tmp[1];
 	}
 	}
 	$tmp=$GLOBALS['sep_array'];
@@ -2595,17 +2594,20 @@ if(isset($_POST['action'])){
 		$_POST['batch2']=$_POST['batch'];
 		$_POST['processs']=$_POST['process'];
 	}
-	if($_POST['opt_oper']=='on'){
-		$_POST['oper_opt']=str_replace("\r\n","\n",$_POST['oper_opt']);
-		$GLOBALS['opt_oper']=explode("\n",$_POST['oper_opt']);
-	}
 }else{
 #Default setting;
-	$_POST['plus_1']='on';
+	if($_GET['action']=='clear'){
+		unset($_SESSION);
+		if(isset($_COOKIE[session_name()])){
+			setcookie(session_name(), '', time()-42000, '/');
+		}
+		unset($_COOKIE[session_name()]);
+		session_destroy();
+	}
+	$_POST['plus_1']=$_POST['jmpmsg']=$_POST['sess_txt_also']=$_POST['scr']='on';
 	$_POST['mfix_pad']='';
 	$_POST['curtab']='gen';
 	$_POST['input']='text';
-	$_POST['jmpmsg']='on';
 	$_POST['casei']='off';
 	$_POST['rot']=13;
 	$_POST['nrot']=5;
@@ -2623,7 +2625,6 @@ if(isset($_POST['action'])){
 	}else{
 		$method='raw';
 	}
-	$_POST['scr']="on";
 	if(isset($_GET['charset'])){
 		$_POST['charset']=$_GET['charset'];
 	}elseif(!empty($_SERVER['HTTP_ACCEPT_CHARSET'])){
@@ -2634,36 +2635,25 @@ if(isset($_POST['action'])){
 	}
 	$_POST['out']='text';
 	$dir="LTR";
-	$_POST['process']='en';
-	$_POST['mode']='en';
+	$_POST['process']=$_POST['mode']='en';
 	$_POST['stmwthl']=12;
 	$_POST['stmwtha']='..';
 	$_POST['trows']=15;
 	$_POST['tcols']=35;
 	$_POST['transpose']=0;
-	$_POST['rpt']=1;
 	$_POST['ssep']="\\n\\n\n\\n\n\\t";
-	$_POST['ttb_brd']="on";
-	$_POST['ttb_ibrd']="on";
+	$_POST['chewing_sort']=$_POST['ttb_brd']=$_POST['ttb_ibrd']=$_POST['ibk']=$_POST['ref_ver']=$_POST['ref_hor']=$_POST['url_raw']='on';
 	$_POST['ttb_align']="left";
-	$_POST['ibk']='on';
 	$_POST['calculator']='x';
-	$_POST['sqr_r']='';
-	$_POST['sqr_c']='';
+	$backup=$_POST['sqr_r']=$_POST['sqr_c']='';
 	$_POST['sqr_cl']='auto';
-	$_POST['ref_ver']='on';
-	$_POST['ref_hor']='on';
-	$_POST['mut_l']='1';
-	$_POST['mut_r']='1';
-	$_POST['url_raw']='on';
-	$backup='';
+	$_POST['rpt']=$_POST['mut_l']=$_POST['mut_r']='1';
 	if(mb()){
 		$_POST['mbstring']='on';
 	}else{
 		$_POST['mbstring']='off';
 	}
 	$_POST['text_size']='12';
-	$_POST['chewing_sort']='on';
 }
 $pattern=str_replace("\r\n","\n",$_POST['pattern']);
 $patterns=explod("\n",$pattern);
@@ -2691,22 +2681,31 @@ if(!isset($_POST['order'])){
 	}
 }
 #</init>
-if($_POST['scr']=="on"){
+if($_POST['scr']=='on'){
 	$s=str_replace("\r\n","\n",$s);
 }
-if($_POST['sep']=="on"){
+if($_POST['sep']=='on'){
 	$s=pro($s,0);
 }else{
 	$s=proc($s);
 }
-if($_POST['out']=="file"){
+if($_POST['out']=='file'){
 	set_time_limit(600);
 	header("Content-Type: application/force-download");
 	header("Content-Transfer-Encoding: Binary");
 	header("Content-Disposition: attachment; filename=untitled");
 	die($s);
-}elseif($_POST['out']=="blank"){
+}elseif($_POST['out']=='blank'){
 	die($s);
+}elseif($_POST['out']=='session'){
+	if(local() || strlen($s)<=102400){
+		$_SESSION['data'][$_POST['out_sess_slot']]=$s;
+		if($_POST['sess_txt_also']!='on'){
+			$s='';
+		}
+	}else{
+		addmsg(WARN,'Remote user\'s quota of each session slot is 100KB.');
+	}
 }
 $tabs=array(
 array('gen','General'),
@@ -2722,12 +2721,18 @@ array('msg','Message')
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=<?echo $_POST['charset'];?>" />
-<title>Bug Converter - ver. <?echo $ver_serial;
+<title>Amidala - ver. <?echo $ver_serial;
 if(ip()=='127.0.0.1'){
 	echo ' <Local Connection>';
 }?></title>
 <script type="text/javascript">
 var s;
+function doKeyDown(event){
+	if (event.ctrlKey && event.keyCode == 13){
+		getobj('form').submit();
+		return false;
+	}
+} 
 function init(){
 szobj='rep';
 szctl(5);
@@ -2874,7 +2879,6 @@ function catchTab(item,e){
 		    
 }
 //<End of EnableTabinTextarea>
-var flag=0;
 function showtab(t){
 	var tabs = new Array();
 	var i;
@@ -2913,7 +2917,6 @@ getobj('text_rows').value=text_height+5;
 textconfig(1);
 		}else if(szobj=='sepr'){
 getobj('sepr').rows+=5;
-getobj('oper_opt').rows=getobj('sepr').rows;
 		}else if(szobj=='ssep'){
 getobj('ssep').rows+=5;
 		}else if(szobj=='rep'){
@@ -2928,7 +2931,6 @@ getobj('text_cols').value=text_width-5;
 textconfig(1);
 		}else if(szobj=='sepr'){
 if(getobj('sepr').cols>20)getobj('sepr').cols-=20;
-getobj('oper_opt').cols=getobj('sepr').cols;
 		}else if(szobj=='ssep'){
 if(getobj('ssep').cols>20)getobj('ssep').cols-=20;
 		}else if(szobj=='rep'){
@@ -2941,7 +2943,6 @@ getobj('text_cols').value=text_width+5;
 textconfig(1);
 		}else if(szobj=='sepr'){
 getobj('sepr').cols+=20;
-getobj('oper_opt').cols=getobj('sepr').cols;
 		}else if(szobj=='ssep'){
 getobj('ssep').cols+=20;
 		}else if(szobj=='rep'){
@@ -2956,7 +2957,6 @@ getobj('text_rows').value=text_height-5;
 textconfig(1);
 		}else if(szobj=='sepr'){
 if(getobj('sepr').rows>5)getobj('sepr').rows-=5;
-getobj('oper_opt').rows=getobj('sepr').rows;
 		}else if(szobj=='ssep'){
 if(getobj('ssep').rows>5)getobj('ssep').rows-=5;
 		}else if(szobj=='rep'){
@@ -2971,8 +2971,6 @@ textconfig(1);
 		}else if(szobj=='sepr'){
 getobj('sepr').cols=20;
 getobj('sepr').rows=6;
-getobj('oper_opt').cols=20;
-getobj('oper_opt').rows=6;
 		}else if(szobj=='ssep'){
 getobj('ssep').cols=20;
 getobj('ssep').rows=6;
@@ -2997,8 +2995,6 @@ getobj('replacement').cols=70;
 	.ed {color:#00ff00;}
 	.ow {color:#ff0000;}
 	.rw {color:#555555;}
-	.nd {text-decoration:none; color:#000;}
-	a:visited.nd {color:#000;}
 	td {vertical-align:top;}
 	.tabc{background-color:#ddf; display:none; padding:10px; height:13em; overflow:auto;}
 	.tab{color:#777; font-weight:bold; padding-left:0.7em; padding-right:0.7em; margin-right:5px; cursor:pointer;}
@@ -3006,16 +3002,16 @@ getobj('replacement').cols=70;
 	.pt{cursor:pointer;}
 </style>
 </head>
-<body onload="init();" onUnload="if(flag==0)alert('May the force be with you!');"><a name="top"></a>
+<body onload="init();" onkeydown="doKeyDown(event)"><a name="top"></a>
 <form method="post" action="<?echo $_SERVER['PHP_SELF'];?>" name="form" id="form" enctype="multipart/form-data">
-<input type="hidden" name="action" value="y" />
+<input type="hidden" name="action" value="yes" />
 <input type="hidden" name="curtab" id="curtab" value="<?echo $_POST['curtab'];?>" />
 <table><tr>
 <td style="width:12em;">
 <fieldset><legend>Assistance</legend>
 <div id="help" style="font-size:10pt; background-color:#ddf; color:#333; height:10em;"></div>
 </fieldset>
-<input type="button" onclick="if(getobj('ccharset').value=='undefined'){alert('Please fill out your current charset!'); getobj('ccharset').value=''; getobj('ccharset').focus();}else{flag=1; getobj('form').submit();}" value="Submit" /> <input type="button" onclick="bkbk=getobj('text').value; getobj('text').value=getobj('backup').value; getobj('backup').value=bkbk; if(this.value=='Undo'){this.value='Redo'}else{this.value='Undo'}" value="Undo"> <input type="button" onClick="if(confirm('Sure to clear ?')){flag=1; location.href='<?echo $_SERVER['PHP_SELF'];?>'}" value="Clear" />
+<input type="button" onclick="if(getobj('ccharset').value=='undefined'){alert('Please fill out your current charset!'); getobj('ccharset').value=''; getobj('ccharset').focus();}else{getobj('form').submit();}" value="Submit" /> <input type="button" onclick="bkbk=getobj('text').value; getobj('text').value=getobj('backup').value; getobj('backup').value=bkbk; if(this.value=='Undo'){this.value='Redo'}else{this.value='Undo'}" value="Undo"> <input type="button" onClick="if(confirm('Sure to clear ?')){location.href='<?echo $_SERVER['PHP_SELF'];?>?action=clear'}" value="Clear" />
 <fieldset><legend>Size Controller</legend>
 <div style="text-align:center;">
 <table>
@@ -3046,8 +3042,26 @@ for($i=0;$i<count($tabs);$i++){
 </div>
 <div id="gen" class="tabc"><span class="block">
 <table>
-<tr><td>Input: </td><td><input type="radio" name="input" onclick="getobj('help').innerHTML='Auto turn on \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=true; getobj('fin').disabled=true;" id="intext" value="text" <?echo $_POST['input']=='text'?'checked="checked"':'';?>/><label for="intext">Text Area</label><input type="radio" onclick="getobj('help').innerHTML='Auto turn off \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=false; getobj('fin').disabled=false;" name="input" id="infile" value="file" <?echo $_POST['input']=='file'?'checked="checked"':'';?>/><label for="infile">File</label><input type="file" id="fin" name="fin" <?echo $_POST['input']=='file'?'':'disabled="disabled"';?>/></td></tr>
-<tr><td>Output: </td><td><input type="radio" name="out" onclick="getobj('form').target='_self'" id="ta" value="text" <?echo ($_POST['out']=="text")?'checked="checked" ':'';?>/><label for="ta">Text Area</label> <input type="radio" name="out" id="fd" onclick="getobj('form').target='_self'" value="file" <?echo ($_POST['out']=="file")?'checked="checked" ':'';?>/><label for="fd">File Download</label> <input type="radio" name="out" onclick="getobj('form').target='_blank'" id="bf" value="blank" <?echo ($_POST['out']=="blank")?'checked="checked" ':'';?>/><label for="bf">Blank Frame</label></td></tr>
+<tr><td>Input: </td><td>
+<input type="radio" name="input" onclick="getobj('help').innerHTML='Auto turn on \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=true; getobj('fin').disabled=true;" id="intext" value="text" <?echo $_POST['input']=='text'?'checked="checked"':'';?>/><label for="intext">Text Area</label>
+<input type="radio" onclick="getobj('help').innerHTML='Auto turn off \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=false; getobj('fin').disabled=false;" name="input" id="infile" value="file" <?echo $_POST['input']=='file'?'checked="checked"':'';?>/><label for="infile">File</label><input type="file" id="fin" name="fin" <?echo $_POST['input']=='file'?'':'disabled="disabled"';?>/>
+<?if(isset($_SESSION['data'])){?><input type="radio" name="input" onclick="getobj('help').innerHTML='Auto turn off \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=false; getobj('fin').disabled=true;" id="insession" value="session" <?echo $_POST['input']=='session'?'checked="checked"':'';?>/><label for="insession">Session</label><select name="in_sess_slot"><?
+for($i=0;$i<count($_SESSION['data']);$i++){
+echo '<option value="'.$i.'"'.($i==$_POST['in_sess_slot']?' selected="selected"':'').'>Slot '.$i.'</option>';
+}
+?></select><?}?></td></tr>
+<tr><td>Output: </td><td>
+<input type="radio" name="out" onclick="getobj('form').target='_self'" id="ta" value="text" <?echo ($_POST['out']=="text")?'checked="checked" ':'';?>/><label for="ta">Text Area</label>
+<input type="radio" name="out" id="fd" onclick="getobj('form').target='_self'" value="file" <?echo ($_POST['out']=="file")?'checked="checked" ':'';?>/><label for="fd">File Download</label>
+<input type="radio" name="out" onclick="getobj('form').target='_blank'" id="bf" value="blank" <?echo ($_POST['out']=="blank")?'checked="checked" ':'';?>/><label for="bf">Blank Frame</label>
+<input type="radio" name="out" onclick="getobj('form').target='_self'" id="sess" value="session" <?echo ($_POST['out']=='session')?'checked="checked" ':'';?>/><label for="sess">Session</label>
+<select name="out_sess_slot"><?
+for($i=0;$i<count($_SESSION['data']);$i++){
+	echo '<option value="'.$i.'"'.($i==$_POST['out_sess_slot']?' selected="selected"':'').'>Slot '.$i.'</option>';
+}
+if($i<8){ echo '<option value="'.$i.'">Slot '.$i.' (New)</option>'; }
+?></select>
+</td></tr>
 <tr><td>Method: </td><td>
 <select name="method" id="method" onchange="assis(1);">
 <?
@@ -3083,7 +3097,7 @@ array('crv','Case Reverse','ed'),
 array('stu','StringToUpper','ow'),
 array('stl','StringToLower','ow'),
 array('ucw','UppercaseTheFirstCharacter','ow'),
-array('sln','StringLength','ow'),
+array('ctr','Counter','ow'),
 array('swd','StringWidth','ow'),
 array('stmwth','StringTrimWidth','ow'),
 array('bod','BitOrder','no'),
@@ -3124,14 +3138,16 @@ for($i=0;$i<count($methods_table);$i++){
 <tr><td></td><td><?radio('mode','en','Encode');?> <?radio('mode','de','Decode');?></td></tr>
 <tr><td>Batch: </td><td><input type="text" size="70" name="batch" id="batch" value="<?echo $_POST['batch'];?>" /><br /><?radio('process','en','Forward');?> <?radio('process','de','Backward');?> <input type="button" value="Clear" onclick="getobj('batch').value='';" /></td></tr>
 </table></span><span class="block"><?chkbx('sep','Separator');?><br />
-<span style="padding-left:10px;"><table><tr><td><?chkbx('sep_pcre','PCRE');?><br />
-<textarea name="sepr" onfocus="szobj='sepr'" id="sepr"><?echo $_POST['sepr'];?></textarea></td><td><?chkbx('opt_oper','Optional Operation');?><br />
-<textarea name="oper_opt" onfocus="szobj='sepr'" id="oper_opt"><?echo $_POST['oper_opt'];?></textarea><br /><?chkbx('plus_1','Plus 1');?></td></tr></table></span></span>
+<span style="padding-left:10px;">
+<?chkbx('sep_pcre','PCRE');?><br />
+<textarea name="sepr" onkeydown="return catchTab(this,event);" onfocus="szobj='sepr'" id="sepr"><?echo $_POST['sepr'];?></textarea><br /><?chkbx('plus_1','Plus 1');?>
+</span></span>
 </div>
 <div id="conf" class="tabc"><span class="block">
 <?chkbx('jmpmsg','Auto Jump to Message');?><br />
 <?chkbx('mbstring','Enable MBString',mb());?><br />
 <?chkbx('casei','Case-Insensitive');?><br />
+<?chkbx('sess_txt_also','Copy Session output to Textarea');?><br />
 <?chkbx('scr','Skip &lt;CR&gt;');?><br />
 <?chkbx('ssp','Skip HtmlSpecialChars');?><br />
 <?chkbx('ibk','Enable Undo');?><br />
@@ -3169,7 +3185,7 @@ echo '<option value="'.$i.'"'.(($_POST['nrot']==$i)?' selected="selected"':'').'
 ?></select></td></tr>
 <tr><td>StringTrimWidth</td><td>Width:<input type="text" name="stmwthl" size="2" value="<?echo $_POST['stmwthl'];?>" /> Append:<input type="text" name="stmwtha" size="5" value="<?echo $_POST['stmwtha'];?>" /></td></tr>
 <tr><td>Base:</td><td>Bits<input type="text" name="base_bit" size="2" value="<?echo $_POST['base_bit'];?>" /> Pad<input type="text" name="base_pad" size="2" value="<?echo $_POST['base_pad'];?>" /><br />
-Symbol<input type="text" name="base_symbol" size="80" value="<?echo $_POST['base_symbol'];?>" /></td></tr>
+Symbol<input type="text" name="base_symbol" size="70" value="<?echo $_POST['base_symbol'];?>" /></td></tr>
 <tr><td>Numeric Base:</td><td>From<input type="text" name="base_from" size="2" value="<?echo $_POST['base_from'];?>" /> To<input type="text" name="base_to" size="2" value="<?echo $_POST['base_to'];?>" /></td></tr>
 <tr><td>From Symbols</td><td><input type="text" name="num_base_symbol1" size="80" value="<?echo $_POST['num_base_symbol1'];?>" /><br />
 Sign<input type="text" name="base_sign1" size="2" value="<?echo $_POST['base_sign1'];?>" /> Point<input type="text" name="base_point1" size="2" value="<?echo $_POST['base_point1'];?>" /></td></tr>
