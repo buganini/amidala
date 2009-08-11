@@ -22,17 +22,23 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#<php>
 #Designed by gmobug, from CNMC.HSNU
-$ver_serial="200601240";
+$ver_serial="200602053";
 
 if(!function_exists('preg_replace')){
-	echo '<a style="font-size:16pt; color:#ff0000;">Please Install PCRE Library!</a><br />';
+	addmsg('Fatal Error: Please Install PCRE Library!');
 }
 
 if(!function_exists('file_get_contents')){
 	function file_get_contents($a){
 		return implode('',file($a));
 	}
+}
+#<function>
+function addmsg($s){
+	global $msg;
+	$msg[count($msg)]=$s;
 }
 
 function bbs2html_dc($s){
@@ -261,10 +267,102 @@ if(eregi("^big5$",$_POST['ccharset']) && $flag==1){
 }
 
 function s2a($s){
-	$s=str_replace("\n"," ",$s);
-	$s=str_replace("\t"," ",$s);
-	$s=trim($s);
-	return explode(" ",$s);
+	if($_POST['ssep_de']==''){
+		addmsg('Error: Null SubSeparator');
+		$r[0]=$s;
+		return $r;
+	}
+	if($_POST['ssepupcre']=="on"){
+		$r=preg_split($_POST['ssep_de'],$s);
+	}else{
+		$r=explode($_POST['ssep_de'],$s);
+	}
+	return $r;
+}
+function a2s($s){
+	$r=implode($_POST['ssep_de'],$s);
+	return $r;
+}
+
+function totable($s){
+	global $hsc;
+	$hsc=1;
+	$l=explode("\n",$s);
+	for($i=0;$i<count($l);$i++){
+		$l[$i]=explode("\t",$l[$i]);
+	}
+	for($i=0;$i<count($l);$i++){
+		for($j=0;$j<count($l[$i]);$j++){
+			if(empty($len[$j]) || strlen($l[$i][$j])>$len[$j]){
+				$len[$j]=strlen($l[$i][$j]);
+			}
+		}
+	}
+	for($i=0;$i<count($len);$i++){
+		if($len[$i]%2==1){
+			$len[$i]+=1;
+		}
+	}
+	for($i=0;$i<count($l);$i++){
+		for($j=0;$j<count($len);$j++){
+			if(empty($l[$i][$j])){
+				$l[$i][$j]=str_repeat(' ',$len[$j]);
+			}else{
+				$l[$i][$j].=str_repeat(' ',$len[$j]-strlen($l[$i][$j]));
+			}
+		}
+	}
+	for($i=0;$i<count($l);$i++){
+		$l[$i]=implode('&#9474;',$l[$i]);
+		$l[$i]=preg_replace("/ *$/","",$l[$i]);
+	}
+	for($i=0;$i<count($len);$i++){
+		$len[$i]=str_repeat('&#9472;',$len[$i]/2);
+	}
+	$im=implode('&#9532;',$len);
+	$s=implode("\n".$im."\n",$l);
+	return $s;
+}
+
+function totable_brd($s){
+	global $hsc;
+	$hsc=1;
+	$l=explode("\n",$s);
+	for($i=0;$i<count($l);$i++){
+		$l[$i]=explode("\t",$l[$i]);
+	}
+	for($i=0;$i<count($l);$i++){
+		for($j=0;$j<count($l[$i]);$j++){
+			if(empty($len[$j]) || strlen($l[$i][$j])>$len[$j]){
+				$len[$j]=strlen($l[$i][$j]);
+			}
+		}
+	}
+	for($i=0;$i<count($len);$i++){
+		if($len[$i]%2==1){
+			$len[$i]+=1;
+		}
+	}
+	for($i=0;$i<count($l);$i++){
+		for($j=0;$j<count($len);$j++){
+			if(empty($l[$i][$j])){
+				$l[$i][$j]=str_repeat(' ',$len[$j]);
+			}else{
+				$l[$i][$j].=str_repeat(' ',$len[$j]-strlen($l[$i][$j]));
+			}
+		}
+	}
+	for($i=0;$i<count($l);$i++){
+		$l[$i]="&#9474;".implode('&#9474;',$l[$i])."&#9474;";
+	}
+	for($i=0;$i<count($len);$i++){
+		$len[$i]=str_repeat('&#9472;',$len[$i]/2);
+	}
+	$im="&#9500;".implode('&#9532;',$len)."&#9508;";
+	$him="&#9484;".implode('&#9516;',$len)."&#9488;";
+	$fim="&#9492;".implode('&#9524;',$len)."&#9496;";
+	$s=$him."\n".implode("\n".$im."\n",$l)."\n".$fim;
+	return $s;
 }
 
 function stdev($s){
@@ -274,7 +372,7 @@ function stdev($s){
 	for($i=0;$i<count($k);$i++){
 		$t+=pow($k[$i]-$a,2);
 	}
-	return sqrt($t/(count($k)-1));
+	return @sqrt($t/(count($k)-1));
 }
 
 function stdevp($s){
@@ -284,7 +382,7 @@ function stdevp($s){
 	for($i=0;$i<count($k);$i++){
 		$t+=pow($k[$i]-$a,2);
 	}
-	return sqrt($t/count($k));
+	return @sqrt($t/count($k));
 }
 
 function average($s){
@@ -295,7 +393,48 @@ function average($s){
 	}
 	return $t/count($a);
 }
-
+function correct($s){
+	$k=s2a($s);
+	$bak=$k;
+	$m=0;
+	for($i=0;$i<count($k);$i++){
+		$tmp[$i]=strlen($k[$i]);
+		if(strlen($k[$i])>strlen($k[$m])){
+			$m=$i;
+		}
+	}
+	$tmp2=$k[0];
+	$k[0]=$k[$m];
+	$k[$m]=$tmp2;
+	if(!same($tmp)){
+		addmsg('Notice: Incoherent Length');
+	}
+	$r='';
+	for($i=0;$i<strlen($k[0]);$i++){
+		for($j=0;$j<count($k);$j++){
+			if($i<strlen($k[$j])){
+			$tmp1[$j]=substr($k[$j],$i,1);			
+			}else{
+			$tmp1[$j]='';
+			}
+		}
+		if(same($tmp1)){
+			$r.=' ';
+		}else{
+			$r.='X';
+		}
+	}
+	$bak[count($bak)]=$r;
+	return a2s($bak);
+}
+function same($s){
+	for($i=1;$i<count($s);$i++){
+		if($s[$i]!=$s[0]){
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
 function case_rev($s){
 	$r='';
 	$a="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -412,7 +551,19 @@ function pcre_rep($s){
 		$p=explode("\n",$pattern);
 		$r=explode("\n",$replacement);
 		for($i=0;$i<count($p);$i++){
-			$s=preg_replace(ent_de($p[$i]), ent_de($r[$i]), $s);
+			$s=@preg_replace(ent_de($p[$i]), ent_de($r[$i]), $s);
+		}
+	}
+	return $s;
+}
+
+function gen_rep($s){
+	global $pattern, $replacement;
+	if($_POST['pattern']!=''){
+		$p=explode("\n",$pattern);
+		$r=explode("\n",$replacement);
+		for($i=0;$i<count($p);$i++){
+			$s=str_replace(ent_de($p[$i]), ent_de($r[$i]), $s);
 		}
 	}
 	return $s;
@@ -465,6 +616,40 @@ function chewing_de($s){
 	return $r;
 }
 
+function chewing_sort_de($s){
+	global $hsc;
+	$hsc=1;
+	$table=array('1'=>"2549;", 'q'=>"2550;", 'a'=>"2551;", 'z'=>"2552;", '2'=>"2553;", 'w'=>"2554;", 's'=>"2555;", 'x'=>"2556;", 'e'=>"2557;", 'd'=>"2558;", 'c'=>"2559;", 'r'=>"2560;", 'f'=>"2561;", 'v'=>"2562;", '5'=>"2563;", 't'=>"2564;", 'g'=>"2565;", 'b'=>"2566;", 'y'=>"2567;", 'h'=>"2568;", 'n'=>"2569;", 'u'=>"12583;", 'j'=>"12584;", 'm'=>"12585;", '8'=>"62570;", 'i'=>"62571;", 'k'=>"62572;", ','=>"62573;", '9'=>"62574;", 'o'=>"62575;", 'l'=>"62576;", '.'=>"62577;", '0'=>"62578;", 'p'=>"62579;", ';'=>"62580;", '/'=>"62581;", '-'=>"62582;", ' '=>" ", '6'=>"99714; ", '3'=>"99711; ", '4'=>"99715; ", '7'=>"99729; ");
+	$r='';
+	for($i=0;$i<strlen($s);$i++){
+		$r.=$table[substr($s,$i,1)];
+	}
+	$k=explode(" ",$r);
+	for($i=0;$i<count($k);$i++){
+		$k[$i]=preg_replace("/;$/",'',$k[$i]);
+		$m=explode(";",$k[$i]);
+		sort($m);
+		for($j=0;$j<count($m);$j++){
+			if($m[$j]>=2549 && $m[$j]<=2569){
+				$m[$j]+=10000;
+			}
+			if($m[$j]>=62570 && $m[$j]<=62582){
+				$m[$j]-=50000;
+			}
+			if($m[$j]==99714 || $m[$j]==99711 || $m[$j]==99715 || $m[$j]==99729){
+				$m[$j]-=99000;
+			}
+		}
+		$k[$i]=implode(";",$m);
+		$k[$i]=str_replace(";",";&#",$k[$i]);
+		if(ereg("[0-9]{3,5}",$k[$i])){
+			$k[$i]="&#".$k[$i].';';
+		}
+	}
+	$r=implode(' ',$k);
+	return $r;
+}
+
 function bin_en($s){
 	$t='';
 	for($i=0;$i<strlen($s);$i++){
@@ -503,6 +688,53 @@ function hex_de($s){
 		$t.=chr(hexdec(substr($s, $i*2, 2)));
 	}
 	return $t;
+}
+
+function ASCIIFilter($s){
+	if(strlen($_POST['ssep_de'])==1){
+	$q=$_POST['ssep_de'];
+	}else{
+	$q=' ';
+	addmsg('Error: Length of SubSeparator != 1, use SPACE');
+	}
+	if(substr($s,0,1)==$q){
+		$r='SEP';
+	}elseif(ord(substr($s,0,1))>127){
+		$r=strtoupper(hex_en(substr($s,0,1)));
+	}else{
+		$r=substr($s,0,1);
+	}
+	for($i=1;$i<strlen($s);$i++){
+		if(substr($s,$i,1)==$q){
+			$r.=' SEP';
+		}elseif(ord(substr($s,$i,1))>127){
+			$r.=' '.strtoupper(hex_en(substr($s,$i,1)));
+		}else{
+			$r.=' '.substr($s,$i,1);
+		}
+	}
+	return $r;
+}
+
+function ASCIIFilter_de($s){
+	if(strlen($_POST['ssep_de'])==1){
+	$q=$_POST['ssep_de'];
+	}else{
+	$q=' ';
+	addmsg('Error: Length of SubSeparator != 1, use SPACE');
+	}
+	$r='';
+	$a=explode($q,$s);
+	for($i=0;$i<count($a);$i++){
+		if($a[$i]=='SEP'){
+			$r.=' ';
+		}elseif(preg_match("/^[a-f0-9]{2}$/i",$a[$i])){
+			$r.=hex_de($a[$i]);
+		}else{
+			$r.=$a[$i];
+		}
+	}
+	return $r;
 }
 
 function dec_en($s){
@@ -545,6 +777,15 @@ function oct_de($s){
 	return $t;
 }
 
+function factorial($s){
+	$s=(int) $s;
+	$i=1;
+	for($j=1;$j<=$s;$j++){
+		$i*=$j;
+	}
+	return $i;
+}
+
 function ent_de($s){
 	$r='';
 	for($i=0;$i<strlen($s);$i++){
@@ -556,7 +797,7 @@ function ent_de($s){
 				case "t": $r.="\t"; break;
 				case "r": $r.="\r"; break;
 				case "n": $r.="\n"; break;
-				case "v": $r.="\v"; break;
+				case "f": $r.="\f"; break;
 				case "0": $r.="\0"; break;
 				default: $r.=("\\".substr($s,$i+1,1)); break;
 			}
@@ -580,21 +821,27 @@ function en($method, $s){
 		case 'rpt': $s=str_repeat($s,$_POST['rpt']); break;
 		case 'rev': $s=strrev($s); break;
 		case 'crv': $s=case_rev($s); break;
+		case 'rep': $s=gen_rep($s); break;
 		case 'pcr': $s=pcre_rep($s); break;
 		case 'pcm': $s=pcre_mat($s); break;
 		case 'spe': $s=htmlspecialchars($s); break;
 		case 'md5': $s=md5($s); break;
-		case 'srt': $k=s2a($s); sort($k); $s=implode(" ",$k); break;
+		case 'srt': $k=s2a($s); sort($k); $s=a2s($k); break;
+		case 'fac': $s=factorial($s); break;
 		case 'ave': $s=average($s); break;
 		case 'sdv': $s=stdevp($s); break;
 		case 'ssdv': $s=stdev($s); break;
 		case 'stu': $s=strtoupper($s); break;
 		case 'bbs': $s=bbs2html($s); break;
 		case 'bbd': $s=bbs2html_dc($s); break;
+		case 'ttb': $s=totable($s);break;
+		case 'ttbd': $s=totable_brd($s);break;
 		case 'stl': $s=strtolower($s); break;
 		case 'ucw': $s=ucwords($s); break;
 		case 'sln': $s=strlen($s); break;
+		case 'cor': $s=correct($s); break;
 		case 'che': break;
+		case 'ascii': $s=ASCIIFilter($s); break;
 		case 'dna': $s=dna_en($s); break;
 		case 'key': $s=key_xor($_POST['key'],$s); break;
 		case 'bre': $s=bit_rev($s); break;
@@ -617,22 +864,29 @@ function de($method, $s){
 		case 'raw': break;
 		case 'rev': $s=strrev($s); break;
 		case 'spe': $s=html_entity_decode(html_entity_decode($s)); break;
-		case 'md5': break;
+		case 'md5': addmsg('Information: <a href="http://www.md5lookup.com/?category=main&page=search" target="_blank">http://www.md5lookup.com</a>'); break;
 		case 'stu': break;
 		case 'crv': $s=case_rev($s); break;
 		case 'stl': break;
 		case 'ucw': break;
 		case 'bbs': break;
-		case 'srt': $k=s2a($s); rsort($k); $s=implode(" ",$k); break;
+		case 'srt': $k=s2a($s); rsort($k); $s=a2s($k); break;
 		case 'bbd': break;
 		case 'rpt': break;
 		case 'pcr': break;
+		case 'ttb': break;
+		case 'ttbd': break;
+		case 'rep': break;
+		case 'cor': break;
 		case 'pcm': break;
+		case 'ascii': $s=ASCIIFilter_de($s); break;
+		case 'fac': break;
 		case 'ave': break;
 		case 'sdv': break;
 		case 'ssdv': break;
 		case 'sln': break;
 		case 'che': $s=chewing_de($s); break;
+		case 'chs': $s=chewing_sort_de($s); break;
 		case 'dna': $s=dna_de($s); break;
 		case 'key': $s=key_xor($_POST['key'],$s); break;
 		case 'bre': $s=bit_rev($s); break;
@@ -641,8 +895,61 @@ function de($method, $s){
 	}
 	return $s;
 }
+function proc($s){
+global $process;
+if($process=="ob"){
+	$bat=explode(",",$_POST['batch2']);
+	for($i=0;$i<count($bat);$i++){
+		list($a,$m)=explode("-",$bat[$i]);
+		if(trim($a)=="e"){
+			$s=en(trim($m),$s);
+		}
+		if(trim($a)=="d"){
+			$s=de(trim($m),$s);
+		}
+	}
+}
+if($process=="re"){
+	$bat=explode(",",$_POST['batch2']);
+	for($i=count($bat)-1;$i>=0;$i--){
+		list($a,$m)=explode("-",$bat[$i]);
+		if(trim($a)=="e"){
+			$s=de(trim($m),$s);
+		}
+		if(trim($a)=="d"){
+			$s=en(trim($m),$s);
+		}
+	}
+}
+return $s;
+}
 
-#EOF;
+function pro($s,$sp){
+	if(count($sp)>1){
+		$a=explode($sp[0],$s);
+		for($i=1;$i<count($sp);$i++){
+			$tmp[$i-1]=$sp[$i];
+		}
+		for($i=0;$i<count($a);$i++){
+			$a[$i]=pro($a[$i],$tmp);
+		}
+		$s=implode($sp[0],$a);
+	}elseif(count($sp)==1){
+		$a=explode($sp[0],$s);
+		for($i=0;$i<count($a);$i++){
+			$a[$i]=proc($a[$i]);
+		}
+		$s=implode($sp[0],$a);
+	}else{
+		$a=explode($sp[0],$s);
+		for($i=0;$i<count($a);$i++){
+			$a[$i]=proc($a[$i]);
+		}
+		$s=implode($sp[0],$a);
+	}
+	return $s;
+}
+#</function>
 if($_GET['appendix']=="source"){
 	header("Content-Type: text/plain");
 	die(file_get_contents($_SERVER['SCRIPT_FILENAME']));
@@ -654,6 +961,7 @@ Big5 Range: [\xA1-\xF9][\x40-\x7E\xA1-\xFE]
 	die($r);
 }
 $hsc=0;
+#<init>
 if(isset($_POST['action'])){
 	$_POST['rot']=$_POST['rot']%26;
 	$_POST['nrot']=$_POST['nrot']%10;
@@ -664,9 +972,23 @@ if(isset($_POST['action'])){
 	$_POST['tcols']=$_POST['tcols']*1;
 	$_POST['transpose']=$_POST['transpose']%12;
 	$_POST['rpt']=$_POST['rpt']*1;
+	$_POST['batch2']=$_POST['batch'];
 	$f=@fopen($_SERVER['SCRIPT_FILENAME'].".clip","w+");
 	@fwrite($f,stripslashes($_POST['clip']));
 	@fclose($f);
+	$_POST['sepr']=str_replace("\r\n","\n",stripslashes($_POST['sepr']));
+	$_POST['ssep']=stripslashes($_POST['ssep']);
+	$_POST['ssep_de']=ent_de($_POST['ssep']);
+	$sep_array=explode("\n",$_POST['sepr']);
+	if($_POST['sep']=="on"){
+	for($i=0;$i<count($sep_array);$i++){
+		$sep_array[$i]=ent_de($sep_array[$i]);
+		if($sep_array[$i]==''){
+			$_POST['sep']="off";
+			addmsg('Error: Null Separator');
+		}
+	}
+	}
 }else{
 	$_POST['rot']=13;
 	$_POST['nrot']=5;
@@ -675,10 +997,11 @@ if(isset($_POST['action'])){
 	$dir="LTR";
 	$process="ob";
 	$_POST['trows']=15;
-	$_POST['tcols']=90;
+	$_POST['tcols']=85;
 	$_POST['transpose']=0;
 	$_POST['out']="text";
 	$_POST['rpt']=1;
+	$_POST['ssep']=' ';
 }
 $pattern=str_replace("\r\n","\n",stripslashes($_POST['pattern']));
 $replacement=str_replace("\r\n","\n",stripslashes($_POST['replacement']));
@@ -691,10 +1014,11 @@ if(!isset($_POST['order'])){
 		$n+=substr($_POST['order'],$i,1);
 		$m*=substr($_POST['order'],$i,1);
 	}
-	if($n!=36 || $m!=40320){
+	if($n!=36 || $m!=40320 || !ereg("[1-8]{8}",$_POST['order'])){
 		$_POST['order']="12345678";
 	}
 }
+#</init>
 if($_FILES['fin']['tmp_name']!="none" && $_FILES['fin']['tmp_name']!="" && $_FILES['fin']['size']>0){
 	$s=str_replace("\r\n","\n",file_get_contents($_FILES['fin']['tmp_name']));
 	unlink($_FILES['fin']['tmp_name']);
@@ -702,84 +1026,12 @@ if($_FILES['fin']['tmp_name']!="none" && $_FILES['fin']['tmp_name']!="" && $_FIL
 	$s=str_replace("\r\n","\n",stripslashes($_POST['text']));
 }
 if($_POST['batch']==''){
-	if($_POST['mode']=="en"){
-		if($_POST['lau']=="on"){
-			$s_array=explode("\n",$s);
-			for($i=0;$i<count($s_array);$i++){
-				$s_array[$i]=en($method, $s_array[$i]);
-			}
-			$s=implode("\n",$s_array);
-		}else{
-			$s=en($method, $s);
-		}
-	}
-	if($_POST['mode']=="de"){
-		if($_POST['lau']=="on"){
-			$s_array=explode("\n",$s);
-			for($i=0;$i<count($s_array);$i++){
-				$s_array[$i]=de($method, $s_array[$i]);
-			}
-			$s=implode("\n",$s_array);
-		}else{
-			$s=de($method, $s);
-		}
-	}
+	$_POST['batch2']=($_POST['mode']=="en"?'e':'d').'-'.$method;
 }
-if($_POST['batch']!='' && $process=="ob"){
-	$bat=explode(",",$_POST['batch']);
-	if($_POST['lau']=="on"){
-		$s_array=explode("\n",$s);
-		for($j=0;$j<count($s_array);$j++){
-			for($i=0;$i<count($bat);$i++){
-				list($a,$m)=explode("-",$bat[$i]);
-				if(trim($a)=="e"){
-					$s_array[$j]=en(trim($m),$s_array[$j]);
-				}
-				if(trim($a)=="d"){
-					$s_array[$j]=de(trim($m),$s_array[$j]);
-				}
-				$s=implode("\n",$s_array);
-			}
-		}
-	}else{
-		for($i=0;$i<count($bat);$i++){
-			list($a,$m)=explode("-",$bat[$i]);
-			if(trim($a)=="e"){
-				$s=en(trim($m),$s);
-			}
-			if(trim($a)=="d"){
-				$s=de(trim($m),$s);
-			}
-		}
-	}
-}
-if($_POST['batch']!='' && $process=="re"){
-	$bat=explode(",",$_POST['batch']);
-	if($_POST['lau']=="on"){
-		$s_array=explode("\n",$s);
-		for($j=0;$j<count($s_array);$j++){
-			for($i=count($bat)-1;$i>=0;$i--){
-				list($a,$m)=explode("-",$bat[$i]);
-				if(trim($a)=="e"){
-					$s_array[$j]=de(trim($m),$s_array[$j]);
-				}
-				if(trim($a)=="d"){
-					$s_array[$j]=en(trim($m),$s_array[$j]);
-				}
-				$s=implode("\n",$s_array);
-			}
-		}
-	}else{
-		for($i=count($bat)-1;$i>=0;$i--){
-			list($a,$m)=explode("-",$bat[$i]);
-			if(trim($a)=="e"){
-				$s=de(trim($m),$s);
-			}
-			if(trim($a)=="d"){
-				$s=en(trim($m),$s);
-			}
-		}
-	}
+if($_POST['sep']=="on"){
+	$s=pro($s,$sep_array);
+}else{
+	$s=proc($s);
 }
 if($_POST['out']=="file"){
 	set_time_limit(60);
@@ -790,40 +1042,54 @@ if($_POST['out']=="file"){
 }elseif($_POST['out']=="blank"){
 	die($s);
 }
-#EOP
+#</php>
 ?>
 <html>
 <head>
-<meta http-equiv=content-type content="text/html; charset=<?echo $_POST['charset'];?>">
+<meta http-equiv="Content-Type" content="text/html; charset=<?echo $_POST['charset'];?>">
 <style type="text/css">
 	a.link{text-decoration:none;}
 	a:hover.link{text-decoration:underline;position:relative;top:2px;left:2px;}
 	.ed {color:#00ff00;}
 	.ue {color:#0000ff;}
 	.ud {color:#ff0000;}
+	.nd {text-decoration:none; color:#000;}
+	a:visited.nd {color:#000;}
+	.sub {position:relative; left: +1em;}
 </style>
 <title>Bug Converter - ver. <?echo $ver_serial;?></title>
 </head>
 <body>
+<?
+if(count($msg)>0){
+echo '<div style="font-size:10pt;"><fieldset><legend>Message</legend>'.implode('<br />',$msg).'</fieldset></div>';
+}
+?>
 <form method="post" action="<?echo $_SERVER['PHP_SELF'];?>" name="form" enctype="multipart/form-data">
 <input type="hidden" name="action" value="y" />
-<table><tr><td>
+<table><tr><td style="vertical-align:top;">
 <textarea dir="<?echo $dir;?>" name="text" rows="<?echo $_POST['trows'];?>" cols="<?echo $_POST['tcols'];?>"><?echo ($_POST['ssp']=="on" || $hsc==1)?$s:htmlspecialchars($s);?></textarea></td>
 <td style="vertical-align:top;">
-<fieldset><legend style="font-weight:bold; color: #333333;">Quick Link</legend>
-<a class="link" href="http://www.google.com" target="_blank">Gooooooooogle</a><br />
-<a class="link" href="http://babelfish.altavista.com" target="_blank">Babel Fish Translation</a><br />
+<fieldset><legend>Assistance</legend>
+<a class="link" href="javascript:void(null);" title="Click and Paste" onclick="document.all.text.value=document.all.text.value+'	'; document.all.text.focus();">TAB</a><br />
 <a class="link" href="http://mathml.twbbs.org" target="_blank">Bug's MathML Board</a><br />
 <a class="link" href="<?echo $_SERVER['PHP_SELF'];?>?appendix=note" target="_blank">Note</a><br /><br />
 <a class="link" href="mailto:gmobug@gmail.com">Contact me</a>
 </fieldset>
 <fieldset><legend>Miscellaneous</legend>
 <input type="checkbox" name="ssp"<?echo ($_POST['ssp']=="on")?' checked="checked"':'';?> /><a onclick="document.all.ssp.click();">Skip HtmlSpecialChars</a><br />
-<input type="checkbox" name="lau"<?echo ($_POST['lau']=="on")?' checked="checked"':'';?> /><a onclick="document.all.lau.click();">Line as unit</a><br />
-<input type="checkbox" onclick="if(this.checked==true){document.getElementById('cpb').style.display='block';}else{document.getElementById('cpb').style.display='none';}" name="cpo" <?echo ($_POST['cpo']=="on")?' checked="checked"':'';?> /><a onclick="document.all.cpo.click();">ClipBoard</a><br />
+<input type="checkbox" onclick="if(this.checked==true){document.getElementById('cpb').style.display='block';}else{document.getElementById('cpb').style.display='none';}" name="cpo"<?echo ($_POST['cpo']=="on")?' checked="checked"':'';?> /><a onclick="document.all.cpo.click();">ClipBoard</a><br />
+<!--
+<input type="checkbox" onclick="if(this.checked==true && document.all.sep.checked==true){document.all.sep.click();}" name="blk"<?echo ($_POST['blk']=="on")?' checked="checked"':'';?> /><a onclick="document.all.blk.click();">Block</a><input type="text" size="10" name="blkpat" value="<?echo $_POST['blkpat'];?>" /><br />
+<input type="checkbox" onclick="if(this.checked==true){document.all.blk.checked=false; document.getElementById('sepa').style.display='block';}else{document.getElementById('sepa').style.display='none';}" name="sep"<?echo ($_POST['sep']=="on")?' checked="checked"':'';?> /><a onclick="document.all.sep.click();">Separator</a><br />
+<div id="sepa" class="sub" style="display:<?echo $_POST['sep']=="on"?'block':'none';?>;"><input type="checkbox" name="upcre"<?echo ($_POST['upcre']=="on")?' checked="checked"':'';?> /><a onclick="document.all.upcre.click();">Use PCRE</a>&nbsp;<a href="#" class="nd" onclick="if(document.all.sepr.cols>20)document.all.sepr.cols-=20;">&#8592;</a><a href="#" class="nd" onclick="if(document.all.sepr.rows>5)document.all.sepr.rows-=5;">&#8593;</a><a href="#" class="nd" onclick="document.all.sepr.cols=20; document.all.sepr.rows=3;">&#9678;</a><a href="#" class="nd" onclick="document.all.sepr.rows+=5;">&#8595;</a><a href="#" class="nd" onclick="document.all.sepr.cols+=20;">&#8594;</a><br /><textarea name="sepr" cols="20" rows="3"><?echo $_POST['sepr'];?></textarea></div>
+-->
+<!--BOD-->
+<input type="checkbox" onclick="if(this.checked==true){document.getElementById('sepa').style.display='block';}else{document.getElementById('sepa').style.display='none';}" name="sep"<?echo ($_POST['sep']=="on")?' checked="checked"':'';?> /><a onclick="document.all.sep.click();">Separator</a><br />
+<div id="sepa" class="sub" style="display:<?echo $_POST['sep']=="on"?'block':'none';?>;"><a href="#" class="nd" onclick="if(document.all.sepr.cols>20)document.all.sepr.cols-=20;">&#8592;</a><a href="#" class="nd" onclick="if(document.all.sepr.rows>5)document.all.sepr.rows-=5;">&#8593;</a><a href="#" class="nd" onclick="document.all.sepr.cols=20; document.all.sepr.rows=3;">&#9678;</a><a href="#" class="nd" onclick="document.all.sepr.rows+=5;">&#8595;</a><a href="#" class="nd" onclick="document.all.sepr.cols+=20;">&#8594;</a><br /><textarea name="sepr" cols="20" rows="3"><?echo $_POST['sepr'];?></textarea></div>
+<!--EOD-->
 </fieldset>
-<a href="#" class="link" style="font-weight:bold; color: #333333;" onclick="document.all.form.submit();">[Submit]</a>
-<a href="#" class="link" onClick="if(confirm('Sure to clear ?'))location.href='<?echo $_SERVER['PHP_SELF'];?>'" style="font-weight:bold; color: #333333;">[Clear]</a>
+<span style="float:left;"><a href="#" class="link" style="font-weight:bold; color: #333333;" onclick="document.all.form.submit();">[Submit]</a></span><span style="float: right;"><a href="#" class="link" onClick="if(confirm('Sure to clear ?'))location.href='<?echo $_SERVER['PHP_SELF'];?>'" style="font-weight:bold; color: #333333;">[Clear]</a></span>
 </td></tr></table><fieldset id="cpb" style="display: <?echo $_POST['cpo']=="on"?'block':'none';?>;"><legend>ClipBoard</legend>
 <textarea name="clip" rows="5" cols="90"><?echo htmlspecialchars(@file_get_contents($_SERVER['SCRIPT_FILENAME'].".clip"));?></textarea>
 </fieldset>
@@ -836,14 +1102,14 @@ if($_POST['out']=="file"){
 </fieldset></td><td>
 <fieldset><legend>Textarea Appearance</legend>
 <table><tr><td>Directionality: </td><td><select name="dir" onChange="document.all.text.dir=this.value"><option value="LTR"<?echo ($dir=="LTR")?' selected="selected"':'';?>>Left to Right</option><option value="RTL"<?echo ($dir=="RTL")?' selected="selected"':'';?>>Right to Left</option></select></td></tr>
-<tr><td>Size: </td><td>Rows: <input type="text" size="3" name="trows" value="<?echo $_POST['trows']?>" /> Cols: <input type="text" size="3" name="tcols" value="<?echo $_POST['tcols'];?>" /> <input type="button" value="Change" onclick="document.all.text.rows=document.all.trows.value; document.all.text.cols=document.all.tcols.value;" /></td></tr>
+<tr><td>Size: </td><td>Rows: <input type="text" size="3" name="trows" value="<?echo $_POST['trows']?>" /> Cols: <input type="text" size="3" name="tcols" value="<?echo $_POST['tcols'];?>" /> <input type="button" value="Change" onclick="if(document.all.trows.value>0)document.all.text.rows=document.all.trows.value; if(document.all.tcols.value>0)document.all.text.cols=document.all.tcols.value;" /></td></tr>
 </table>
 </fieldset></td></tr>
 </table>
 <fieldset><legend>Convert</legend>
-<table><tr><td>
+<span style="float:left;">
 <table>
-<tr><td style="vertical-align:top;">Method: </td><td><select name="method" onChange="if(this.value=='tra'){document.all.lau.checked=false;}">
+<tr><td style="vertical-align:top;">Method: </td><td><select name="method">
 <option style="color:#555555;" value="raw"<?echo ($method=="raw")?' selected="selected"':'';?>>RAW (Output input)</option>
 <option value="srt"<?echo ($method=="srt")?' selected="selected"':'';?>>Sort</option>
 <option value="tra"<?echo ($method=="tra")?' selected="selected"':'';?>>Transpose</option>
@@ -857,7 +1123,13 @@ if($_POST['out']=="file"){
 <option value="oct"<?echo ($method=="oct")?' selected="selected"':'';?>>Oct</option>
 <option value="dec"<?echo ($method=="dec")?' selected="selected"':'';?>>Dec</option>
 <option value="hex"<?echo ($method=="hex")?' selected="selected"':'';?>>Hex</option>
+<option class="ud" value="ttb"<?echo ($method=="ttb")?' selected="selected"':'';?>>To Table</option>
+<option class="ud" value="ttbd"<?echo ($method=="ttbd")?' selected="selected"':'';?>>To Table (Border)</option>
+<option class="ud" value="cor"<?echo ($method=="cor")?' selected="selected"':'';?>>Correct</option>
+<option value="ascii"<?echo ($method=="ascii")?' selected="selected"':'';?>>ASCIIFilter</option>
 <option class="ue" value="che"<?echo ($method=="che")?' selected="selected"':'';?>>Chewing</option>
+<option class="ue" value="chs"<?echo ($method=="chs")?' selected="selected"':'';?>>Chewing (Sort)</option>
+<option class="ud" value="rep"<?echo ($method=="rep")?' selected="selected"':'';?>>Replace</option>
 <option class="ud" value="pcr"<?echo ($method=="pcr")?' selected="selected"':'';?>>PCRE Replace</option>
 <option class="ud" value="pcm"<?echo ($method=="pcm")?' selected="selected"':'';?>>PCRE Match</option>
 <option value="spe"<?echo ($method=="spe")?' selected="selected"':'';?>>HtmlSpecialChars</option>
@@ -872,18 +1144,23 @@ if($_POST['out']=="file"){
 <option class="ed" value="bre"<?echo ($method=="bre")?' selected="selected"':'';?>>BitReverse (not)</option>
 <option class="ed" value="key"<?echo ($method=="key")?' selected="selected"':'';?>>Key (xor)</option>
 <option value="rot"<?echo ($method=="rot")?' selected="selected"':'';?>>Rotate</option>
-<option class="ud" value="md5"<?echo ($method=="md5")?' selected="selected"':'';?>>MD5</option>
+<option value="md5"<?echo ($method=="md5")?' selected="selected"':'';?>>MD5</option>
+<option class="ud" value="fac"<?echo ($method=="fac")?' selected="selected"':'';?>>Factorial</option>
 <option class="ud" value="ave"<?echo ($method=="ave")?' selected="selected"':'';?>>Arithmetic Average</option>
 <option class="ud" value="sdv"<?echo ($method=="sdv")?' selected="selected"':'';?>>Standard Deviation</option>
 <option class="ud" value="ssdv"<?echo ($method=="ssdv")?' selected="selected"':'';?>>Sample Standard Deviation</option>
 </select> <input type="button" value="Add to Batch" onClick="var i; i=((document.all.mode[0].checked==true)?'e':'d'); if(document.all.batch.value==''){document.all.batch.value=i+'-'+document.all.method.value;}else{document.all.batch.value=document.all.batch.value+', '+i+'-'+document.all.method.value}" /></td></tr>
 <tr><td></td><td><input type="radio" name="mode" value="en" <?echo ($_POST['mode']!="de")?'checked="checked" ':'';?>/><a onClick="document.all.mode[0].checked='checked';">Encode</a> <input type="radio" name="mode" value="de" <?echo ($_POST['mode']=="de")?'checked="checked" ':'';?>/><a onClick="document.all.mode[1].checked='checked';">Decode</a> <a style="font-size:9pt; color:#0000ff;">(Unsupport Encode)</a><a style="font-size:9pt; color:#ff0000;">(Unsupport Decode)</a><a style="font-size:9pt; color:#00ff00;">(Encode = Decode)</a></td></tr>
 <tr><td style="vertical-align:top;">Batch: </td><td><input type="text" size="70" name="batch" value="<?echo $_POST['batch'];?>" /><br /><input type="radio" name="process" value="ob" <?echo ($process=="ob")?'checked="checked" ':'';?> /><a onClick="document.all.process[0].checked='checked';">Forward</a> <input type="radio" name="process" value="re" <?echo ($process=="re")?'checked="checked" ':'';?> /><a onClick="document.all.process[1].checked='checked';">Backward</a> <input type="button" value="Clear" onclick="document.all.batch.value='';" /></td></tr>
-<tr><td>PCRE:</td><td><input type="button" value=" + " onClick="if(this.value==' + '){this.value=' - '; document.all.pattern.rows=5; document.all.replacement.rows=5;}else{this.value=' + '; document.all.pattern.rows=1; document.all.replacement.rows=1;}" />&nbsp;&nbsp;<input type="button" value="Clear" onClick="document.all.pattern.value=''; document.all.replacement.value='';" /></td></tr>
+<tr><td>Match/Replace:</td><td><span id="mrc"><a href="#" class="nd" onclick="if(document.all.pattern.cols>20)document.all.pattern.cols-=20; if(document.all.replacement.cols>20)document.all.replacement.cols-=20;">&#8592;</a><a href="#" class="nd" onclick="if(document.all.pattern.rows>5)document.all.pattern.rows-=5; if(document.all.replacement.rows>5)document.all.replacement.rows-=5;">&#8593;</a><a href="#" class="nd" onclick="document.all.pattern.rows=1; document.all.replacement.rows=1; document.all.pattern.cols=70; document.all.replacement.cols=70;">&#9678;</a><a href="#" class="nd" onclick="document.all.pattern.rows+=5; document.all.replacement.rows+=5;">&#8595;</a><a href="#" class="nd" onclick="document.all.pattern.cols+=20; document.all.replacement.cols+=20;">&#8594;</a></span>&nbsp;&nbsp;<input type="button" value="Clear" onClick="document.all.pattern.value=''; document.all.replacement.value='';" /></td></tr>
 <tr><td style="vertical-align:top;">Pattern:</td><td><textarea name="pattern" cols="70" rows="1"><?echo htmlspecialchars($pattern);?></textarea></td></tr>
 <tr><td style="vertical-align:top;">Replacement:</td><td><textarea name="replacement" cols="70" rows="1"><?echo htmlspecialchars($replacement);?></textarea></td></tr></table>
-</td><td style="vertical-align:top;"><table>
-<tr><td>Key:</td><td><input type="text" name="key" sze="8" value="<?echo $_POST['key']?>" /></td></tr>
+</span><span style="float:left;"><table>
+<tr><td>SubSeparator:</td><td><input type="text" name="ssep" value="<?echo $_POST['ssep'];?>" /></td></tr>
+<!--
+<tr><td> </td><td><span class="sub"><input type="checkbox"  name="ssepupcre"<?echo ($_POST['ssepupcre']=="on")?' checked="checked"':'';?> /><a onclick="document.all.ssepupcre.click();">Use PCRE</a></span></td></tr>
+-->
+<tr><td>Key:</td><td><input type="text" name="key" value="<?echo $_POST['key']?>" /></td></tr>
 <tr><td>BitOrder:</td><td><input type="text" name="order" maxlength="8" size="6" value="<?echo $_POST['order'];?>" /></td></tr>
 <tr><td>Transpose:</td><td><select name="transpose">
 <?
@@ -904,7 +1181,7 @@ echo '<option value="'.$i.'"'.(($_POST['nrot']==$i)?' selected="selected"':'').'
 }
 ?></select></td></tr>
 <tr><td>Repeat:</td><td><input type="text" name="rpt" size="2" value="<?echo $_POST['rpt'];?>" /></td></tr></table>
-</td></tr></table>
+</span>
 </fieldset>
 <fieldset><legend>Charset</legend>
 Current : <script language="javascript">document.write(((typeof(document.charset)=="undefined")?document.characterSet:document.charset));</script><br />
