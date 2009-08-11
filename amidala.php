@@ -25,7 +25,7 @@
 
 $time_begin=mtime();
 #<php>
-$ver_serial='2007021200';
+$ver_serial='2007030200';
 ini_set('display_errors', '0');
 #error_reporting(E_ALL & ~E_NOTICE);
 set_magic_quotes_runtime(0);
@@ -81,29 +81,29 @@ return empty($_SERVER['HTTP_X_FORWARDED_FOR'])?$_SERVER['REMOTE_ADDR']:$_SERVER[
 }
 
 function pcre(){
-return function_exists('preg_replace')?TRUE:FALSE;
+return function_exists('preg_replace')?true:false;
 }
 
 function bc(){
-return function_exists('bcadd')?TRUE:FALSE;
+return function_exists('bcadd')?true:false;
 }
 
 function mb(){
-return function_exists('mb_internal_encoding')?TRUE:FALSE;
+return function_exists('mb_internal_encoding')?true:false;
 }
 
 function mbs(){
-return (mb() && $_POST['mbstring']=='on')?TRUE:FALSE;
+return (mb() && $_POST['mbstring']=='on')?true:false;
 }
 
 function counter($s){
 	$arr[0]=$s;
-	for($i=0;$i<count($_POST['ssep_de']);$i++){
+	for($i=0;$i<count($_POST['ssep_de']);++$i){
 		$ct=count($arr);
-		for($j=0;$j<$ct;$j++){
+		for($j=0;$j<$ct;++$j){
 			$tmp=explod($_POST['ssep_de'][$i],$arr[$j]);
 			$arr[$j]=$tmp[0];
-			for($k=1;$k<count($tmp);$k++){
+			for($k=1;$k<count($tmp);++$k){
 				$arr[]=$tmp[$k];
 			}
 		}
@@ -137,7 +137,7 @@ function addmsg($t,$s,$f=0){
 
 function cancel(){
 global $cancel;
-return ($cancel==1)?TRUE:FALSE;
+return ($cancel==1)?true:false;
 }
 
 function bbs2html($s){
@@ -179,13 +179,13 @@ padding:0;
 margin:0;
 border:0 none;
 }';
-for($i=0;$i<strlen($s);$i++){
+for($i=0;$i<strlen($s);++$i){
 	if(substr($s,$i,2)==chr(27).'['){
 		$tmp='';
 		$j=$i+2;
 		while(substr($s,$j,1)!="m"){
 			$tmp.=substr($s,$j,1);
-			$j++;
+			++$j;
 		}
 		if($big5 && $flag==1){
 			$bak=$style;
@@ -203,7 +203,7 @@ for($i=0;$i<strlen($s);$i++){
 			$style='color:#'.$color.';'.(($dec=='none')?'':(' text-decoration:'.$dec.';')).' background:#'.$bg.';';
 		}else{
 			$t=explode(';',$tmp);
-			for($k=0;$k<count($t);$k++){
+			for($k=0;$k<count($t);++$k){
 				if($t[$k]==0 || strlen($t[$k])==0){
 					$color='BBB';
 					$bg='000';
@@ -256,12 +256,11 @@ for($i=0;$i<strlen($s);$i++){
 		}else{
 			$h='&nbsp;&nbsp;';
 		}
-		$h.=substr($s,$i,1);
-		$r.='<td colspan="2" '.bbs2html_style('width:1em; '.$bak).'><a '.bbs2html_style('position:absolute; overflow:hidden; width:0.5em; '.$bak).'>'.$h.'</a><a '.bbs2html_style($style).'>'.$h.'</a></td>';
+		$r.='<td colspan="2"><a '.bbs2html_style('position:absolute; overflow:hidden; width:0.5em; '.$bak).'>'.$h.'</a><a '.bbs2html_style($style).'>'.$h.'</a></td>';
 		$flag=0;
 	}elseif(preg_match("/^[\xA1-\xF9][\x40-\x7E\xA1-\xFE]$/",substr($s,$i,2))){
 		$r.='<td colspan="2" '.bbs2html_style('width:1em; '.$style).'>'.substr($s,$i,2).'</td>';
-		$i++;
+		++$i;
 	}elseif(preg_match("/[\xA1-\xF9]/",substr($s,$i,1))){
 		if(substr($s,$i+1,1)==chr(27)){
 			$h=substr($s,$i,1);
@@ -308,7 +307,7 @@ function bbs2html_style($style){
 function accumulation($s,$f){
 	$a=s2a($s);
 	if($f==0){
-		for($i=1;$i<count($a);$i++){
+		for($i=1;$i<count($a);++$i){
 			$a[$i]+=$a[$i-1];
 		}
 	}else{
@@ -329,7 +328,7 @@ if(count($ipa)!=4 || count($ipb)!=4){
 addmsg(ERR,'Incorrect IP format');
 return $s;
 }
-	for($i=0;$i<4;$i++){
+	for($i=0;$i<4;++$i){
 if($ipa[$i]>255 || $ipb[$i]>255 || $ipa[$i]<0 || $ipb[$i]<0){
 addmsg(ERR,'Incorrect IP format');
 return $s;
@@ -341,7 +340,7 @@ return $s;
 	}
 	$lala='';
 	$lala2='';
-	for($i=0;$i<32;$i++){
+	for($i=0;$i<32;++$i){
 		if(substr($bina,$i,1)==substr($binb,$i,1)){
 			$lala.=substr($bina,$i,1);
 			$lala2.='1';
@@ -351,7 +350,7 @@ return $s;
 	}
 	$lala.=str_repeat('0',32-strlen($lala));
 	$lala2.=str_repeat('0',32-strlen($lala2));
-	for($i=0;$i<4;$i++){
+	for($i=0;$i<4;++$i){
 		$p[$i]=substr($lala2,$i*8,8);
 		$p[$i]=bindec($p[$i]);
 		$q[$i]=substr($lala,$i*8,8);
@@ -390,7 +389,7 @@ function a2s($s,$k=0){
 
 function s2m($s){
 	$r=s2a($s,1);
-	for($i=0;$i<count($r);$i++){
+	for($i=0;$i<count($r);++$i){
 		$r[$i]=s2a($r[$i]);
 	}
 	return $r;
@@ -398,14 +397,14 @@ function s2m($s){
 
 function mfix($s){
 	$k=0;
-	for($i=0;$i<count($s);$i++){
+	for($i=0;$i<count($s);++$i){
 		if(count($s[$i])>$k){
 			$k=count($s[$i]);
 		}
 	}
 	$pad=ent_de($_POST['mfix_pad']);
-	for($i=0;$i<count($s);$i++){
-		for($j=0;$j<$k;$j++){
+	for($i=0;$i<count($s);++$i){
+		for($j=0;$j<$k;++$j){
 			if(!isset($s[$i][$j])){
 				$s[$i][$j]=$pad;
 			}
@@ -415,7 +414,7 @@ function mfix($s){
 }
 
 function m2s($s){
-	for($i=0;$i<count($s);$i++){
+	for($i=0;$i<count($s);++$i){
 		$s[$i]=a2s($s[$i]);
 	}	
 	$r=a2s($s,1);
@@ -424,9 +423,9 @@ function m2s($s){
 
 function crc16($string){ 
  	$crc = 0xFFFF;
-	for($x=0;$x<strlen($string);$x++){
+	for($x=0;$x<strlen($string);++$x){
 		$crc=$crc ^ ord($string[$x]);
-			for($y=0;$y<8;$y++) {
+			for($y=0;$y<8;++$y) {
 				if(($crc & 0x0001)==0x0001){
 					$crc=(($crc >> 1) ^ 0xA001);
 				}else{$crc=$crc >> 1;}
@@ -437,26 +436,26 @@ function crc16($string){
 
 function totable($s){
 	$l=s2m($s);
-	for($i=0;$i<count($l);$i++){
-		for($j=0;$j<count($l[$i]);$j++){
+	for($i=0;$i<count($l);++$i){
+		for($j=0;$j<count($l[$i]);++$j){
 			if(empty($len[$j]) || strwidth($l[$i][$j])>$len[$j]){
 				$len[$j]=strwidth($l[$i][$j]);
 			}
 		}
 	}
-	for($i=0;$i<count($len);$i++){
+	for($i=0;$i<count($len);++$i){
 		if($len[$i]%2==1){
 			$len[$i]+=1;
 		}
 	}
 if($_POST['ttb_mono']=="on"){
 	rsort($len);
-	for($i=0;$i<count($len);$i++){
+	for($i=0;$i<count($len);++$i){
 		$len[$i]=$len[0];
 	}
 }
-	for($i=0;$i<count($l);$i++){
-		for($j=0;$j<count($len);$j++){
+	for($i=0;$i<count($l);++$i){
+		for($j=0;$j<count($len);++$j){
 			if(!isset($l[$i][$j])){
 				$l[$i][$j]=str_repeat(' ',$len[$j]);
 			}else{
@@ -471,7 +470,7 @@ if($_POST['ttb_align']=="left"){
 			$l[$i][$j]=htmlspecialchars($l[$i][$j]);
 		}
 	}
-	for($i=0;$i<count($l);$i++){
+	for($i=0;$i<count($l);++$i){
 if($_POST['ttb_ibrd']=="on"){
 		$l[$i]=implode('&#9474;',$l[$i]);
 }else{
@@ -483,7 +482,7 @@ $l[$i]="&#9474;".$l[$i]."&#9474;";
 $l[$i]=preg_replace('/ +$/','',$l[$i]);
 }
 	}
-	for($i=0;$i<count($len);$i++){
+	for($i=0;$i<count($len);++$i){
 		$len[$i]=str_repeat('&#9472;',$len[$i]/2);
 	}
 	$im=implode('&#9532;',$len);
@@ -525,8 +524,8 @@ function sqr_reflect($s){
 	$m=mfix($m);
 	$q=count($m);
 	$r=count($m[0]);
-	for($i=0;$i<$q;$i++){
-		for($j=0;$j<$r;$j++){
+	for($i=0;$i<$q;++$i){
+		for($j=0;$j<$r;++$j){
 			$i2=($_POST['ref_hor']=='on'?$q-$i-1:$i);
 			$j2=($_POST['ref_ver']=='on'?$r-$j-1:$j);
 			$m2[$i][$j]=$m[$i2][$j2];
@@ -537,14 +536,14 @@ function sqr_reflect($s){
 
 function correct($s){
 	$k=s2a($s);
-	for($i=0;$i<count($k);$i++){
-		for($j=0;$j<strleng($k[$i]);$j++){
+	for($i=0;$i<count($k);++$i){
+		for($j=0;$j<strleng($k[$i]);++$j){
 			$arr[$i][$j]=substri($k[$i],$j,1);
 		}
 	}
 	$max=0;
 	$min=count($arr[0]);
-	for($i=0;$i<count($arr);$i++){
+	for($i=0;$i<count($arr);++$i){
 		if(count($arr[$i])>$max){
 			$max=count($arr[$i]);
 		}
@@ -552,19 +551,19 @@ function correct($s){
 			$min=count($arr[$i]);
 		}
 	}
-	for($j=0;$j<$max;$j++){
+	for($j=0;$j<$max;++$j){
 		$width[$j]=0;
-		for($i=0;$i<count($arr);$i++){
+		for($i=0;$i<count($arr);++$i){
 			if($j<count($arr[$i]) && strwidth($arr[$i][$j])>$width[$j]){
 				$width[$j]=strwidth($arr[$i][$j]);
 			}
 		}
 	}
-	for($i=0;$i<$min;$i++){
-		$flag=FALSE;
-		for($j=1;$j<count($arr);$j++){
+	for($i=0;$i<$min;++$i){
+		$flag=false;
+		for($j=1;$j<count($arr);++$j){
 			if($arr[$j][$i]!=$arr[0][$i]){
-				$flag=TRUE;
+				$flagfalse;
 			}
 		}
 		if($flag){
@@ -573,19 +572,19 @@ function correct($s){
 			$res[$i]=' ';
 		}
 	}
-	for(;$i<$max;$i++){
+	for(;$i<$max;++$i){
 		$res[$i]='X';
 	}
-	for($i=0;$i<count($arr);$i++){
-		for($j=0;$j<count($arr[$i]);$j++){
+	for($i=0;$i<count($arr);++$i){
+		for($j=0;$j<count($arr[$i]);++$j){
 			$arr[$i][$j].=str_repeat(' ',$width[$j]-strwidth($arr[$i][$j]));
 		}
 	}
-	for($i=0;$i<$max;$i++){
+	for($i=0;$i<$max;++$i){
 		$res[$i].=str_repeat(' ',$width[$i]-strwidth($res[$i]));
 	}
 	$k=array();
-	for($i=0;$i<count($arr);$i++){
+	for($i=0;$i<count($arr);++$i){
 		$k[$i]=implode('',$arr[$i]);
 	}
 	$k[]=implode('',$res);
@@ -595,7 +594,7 @@ function correct($s){
 function str_rev($s){
 	if(mbs()){
 		$r='';
-		for($i=0;$i<mb_strlen($s);$i++){
+		for($i=0;$i<mb_strlen($s);++$i){
 			$r=mb_substr($s,$i,1).$r;
 		}
 		return $r;
@@ -608,7 +607,7 @@ function case_rev($s){
 	$r='';
 	$a="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	$b="abcdefghijklmnopqrstuvwxyz";
-	for($i=0;$i<strleng($s);$i++){
+	for($i=0;$i<strleng($s);++$i){
 		$e=substri($s,$i,1);
 		if(ereg("[A-Z]",$e)){
 			$r.=substr($b,(ord($e)-ord('A')),1);
@@ -626,7 +625,7 @@ function rotate($s,$rot,$nrot){
 	$a="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	$b="abcdefghijklmnopqrstuvwxyz";
 	$n="0123456789";
-	for($i=0;$i<strleng($s);$i++){
+	for($i=0;$i<strleng($s);++$i){
 		$e=substri($s,$i,1);
 		if(ereg("[A-Z]",$e)){
 			$r.=substr($a,(ord($e)-ord('A')+$rot)%26,1);
@@ -647,7 +646,7 @@ if(count($a)<2){
 		addmsg(ERR,'Matrix not enough');
 		return $s;
 }
-for($i=0;$i<count($a);$i++){
+for($i=0;$i<count($a);++$i){
 	$a[$i]=s2m($a[$i]);
 	$a[$i]=mfix($a[$i]);
 	if($i>0 && count($a[$i-1][0])!=count($a[$i])){
@@ -656,12 +655,12 @@ for($i=0;$i<count($a);$i++){
 	}
 }
 $ma=$a[0];
-for($n=1;$n<count($a);$n++){
+for($n=1;$n<count($a);++$n){
 $mb=$a[$n];
-	for($i=0;$i<count($ma);$i++){
-		for($j=0;$j<count($mb[0]);$j++){
+	for($i=0;$i<count($ma);++$i){
+		for($j=0;$j<count($mb[0]);++$j){
 			$r[$i][$j]=0;
-			for($k=0;$k<count($mb);$k++){
+			for($k=0;$k<count($mb);++$k){
 				$r[$i][$j]+=$ma[$i][$k]*$mb[$k][$j];
 			}
 		}
@@ -683,19 +682,19 @@ function matrix_inverse($s){
 		$r[1][1]=$m[0][0];
 		return "(1/".$inv.")*\n".m2s($r);
 	}
-	for($i=0;$i<count($m);$i++){
-		for($j=0;$j<count($m);$j++){
+	for($i=0;$i<count($m);++$i){
+		for($j=0;$j<count($m);++$j){
 			$p=0;
 			$q=0;
-			for($k=0;$k<count($m);$k++){
+			for($k=0;$k<count($m);++$k){
 				if($k!=$i){
-					for($l=0;$l<count($m);$l++){
+					for($l=0;$l<count($m);++$l){
 						if($l!=$j){
 							$t[$p][$q]=$m[$k][$l];
-							$q++;
+							++$q;
 						}
 					}
-					$p++;
+					++$p;
 					$q=0;
 				}
 			}
@@ -729,19 +728,19 @@ function determinant_core($m){
 		return $m[0][0]*$m[1][1]-$m[1][0]*$m[0][1];
 	}
 	$f=1;
-	for($w=0;$w<$k;$w++){
+	for($w=0;$w<$k;++$w){
 		$mul=$m[$w][0];
 		$m2=array();
 		$i1=0;
-		for($i=0;$i<$k;$i++){
+		for($i=0;$i<$k;++$i){
 			if($i!=$w){
 				$m2[$i1]=array();
 				$i2=0;
-				for($j=1;$j<$k;$j++){
+				for($j=1;$j<$k;++$j){
 					$m2[$i1][$i2]=$m[$i][$j];
-					$i2++;
+					++$i2;
 				}
-				$i1++;
+				++$i1;
 			}
 		}
 		$r+=$mul*$f*determinant_core($m2);
@@ -755,8 +754,8 @@ function matrix_rotate($s,$ac){
 	$m=mfix($m);
 	$t=count($m);
 	$k=count($m[0]);
-	for($i=0;$i<$k;$i++){
-		for($j=0;$j<$t;$j++){
+	for($i=0;$i<$k;++$i){
+		for($j=0;$j<$t;++$j){
 			if($ac==0){
 				$r[$i][$j]=$m[$j][$k-$i-1];
 			}else{
@@ -770,8 +769,8 @@ function matrix_rotate($s,$ac){
 function matrix_transpose($s){
 	$m=s2m($s);
 	$m=mfix($m);
-	for($i=0;$i<count($m);$i++){
-		for($j=0;$j<count($m[0]);$j++){
+	for($i=0;$i<count($m);++$i){
+		for($j=0;$j<count($m[0]);++$j){
 			$r[$j][$i]=$m[$i][$j];
 		}
 	}
@@ -780,7 +779,7 @@ function matrix_transpose($s){
 
 function tran($p,$s,$f){
 	$a=explod("\n",$s);
-	for($i=0;$i<count($a);$i++){
+	for($i=0;$i<count($a);++$i){
 		if(ereg("^[[:space:][:punct:]CDEFGAB#bdxXMimsuagdj+/0-9\-]*$",$a[$i])){
 			$r[$i]=transpose($p,$a[$i],$f);
 		}else{
@@ -796,7 +795,7 @@ function transpose($p,$s,$f){
 	$t[2]=array("C","bD","D","bE","E","F","bG","G","bA","A","bB","B");
 	$r='';
 	$s=preg_replace("/([CDEFGAB])([#b])/","\\2\\1",$s);
-	for($i=0;$i<strlen($s);$i++){
+	for($i=0;$i<strlen($s);++$i){
 		$e=substr($s,$i,1);
 		if($e=="#" && ereg("[CDEFGAB]",substr($s,$i+1,1))){
 			$e.=substr($s,++$i,1);
@@ -815,13 +814,13 @@ function transpose($p,$s,$f){
 
 function bitorder_en($o,$s){
 	$r='';
-	for($i=0;$i<8;$i++){
+	for($i=0;$i<8;++$i){
 		$k[$i]=substr($o,$i,1)-1;
 	}
 	$s=bin_en($s);
-	for($i=0;$i<strlen($s)/8;$i++){
+	for($i=0;$i<strlen($s)/8;++$i){
 		$e=substr($s,$i*8,8);
-		for($j=0;$j<8;$j++){
+		for($j=0;$j<8;++$j){
 			$r.=substr($e,$k[$j],1);
 		}
 	}
@@ -830,13 +829,13 @@ function bitorder_en($o,$s){
 
 function bitorder_de($o,$s){
 	$r='';
-	for($i=0;$i<8;$i++){
+	for($i=0;$i<8;++$i){
 		$k[substr($o,$i,1)-1]=$i;
 	}
 	$s=bin_en($s);
-	for($i=0;$i<strlen($s)/8;$i++){
+	for($i=0;$i<strlen($s)/8;++$i){
 		$e=substr($s,$i*8,8);
-		for($j=0;$j<8;$j++){
+		for($j=0;$j<8;++$j){
 			$r.=substr($e,$k[$j],1);
 		}
 	}
@@ -845,7 +844,7 @@ function bitorder_de($o,$s){
 
 function bit_rev($s){
 	$r='';
-	for($i=0;$i<strlen($s);$i++){
+	for($i=0;$i<strlen($s);++$i){
 		$r.= (~ substr($s,$i,1));
 	}
 	return $r;
@@ -854,15 +853,15 @@ function bit_rev($s){
 function pcre_valid(&$s){
 	if(empty($s)){
 		addmsg(ERR,'Empty PCRExpression');
-		return FALSE;
+		return false;
 	}
 	$del=substr($s,0,1);
 	$l=strlen($s);
 	$flag=true;
-	for($i=1;$i<$l;$i++){
+	for($i=1;$i<$l;++$i){
 		$e=substr($s,$i,1);
 		if($e=='\\'){
-			$i++;
+			++$i;
 			continue;
 		}elseif($e==$del){
 			$flag=false;
@@ -879,20 +878,20 @@ function pcre_valid(&$s){
 	$m=substr($s,$i+1);
 	if(ereg('[^iAmsexEU]',$m)){
 		addmsg(WARN,'Unknown modifier \''.$m.'\'');
-		return FALSE;
+		return false;
 	}
 	if(ereg('e',$m)){
 		addmsg(WARN,'Modifier \'e\' is disabled');
-		return FALSE;
+		return false;
 	}	
-	return TRUE;
+	return true;
 }
 
 function pcre_rep($s){
 	global $patterns, $replacements;
 	$p=$patterns;
 	$r=$replacements;
-	for($i=0;$i<count($p);$i++){
+	for($i=0;$i<count($p);++$i){
 		if(!pcre_valid($p[$i])){
 			continue;
 		}
@@ -941,7 +940,7 @@ function base_conv($s,$flag=0,$from=NULL,$symbol1=NULL,$to=NULL,$symbol2=NULL){
 		addmsg(ERR,'Symbol not enough!');
 		return $s;
 	}
-	for($i=0;$i<$symlen1;$i++){
+	for($i=0;$i<$symlen1;++$i){
 		$de_table[substri($symbol1,$i,1).'']=$i;
 	}
 	if(substri($s,0,1)==$sign1){
@@ -958,7 +957,7 @@ function base_conv($s,$flag=0,$from=NULL,$symbol1=NULL,$to=NULL,$symbol2=NULL){
 		$x=$s;
 	}
 	$val=0;
-	for($i=0;$i<strleng($x);$i++){
+	for($i=0;$i<strleng($x);++$i){
 		$val=bcmul($val,$from);
 		$e=substri($x,$i,1);
 		if(!isset($de_table[$e])){
@@ -969,7 +968,7 @@ function base_conv($s,$flag=0,$from=NULL,$symbol1=NULL,$to=NULL,$symbol2=NULL){
 	}
 	$ret='';
 	if($to==10){
-		for($i=0;$i<strlen($val);$i++){
+		for($i=0;$i<strlen($val);++$i){
 			$ret.=substri($symbol2,substr($val,$i,1),1);
 		}
 	}else{
@@ -989,7 +988,7 @@ function base_conv($s,$flag=0,$from=NULL,$symbol1=NULL,$to=NULL,$symbol2=NULL){
 	if($ptr){
 		$pval=0;
 		$y=str_rev($y);
-		for($i=0;$i<strleng($y);$i++){
+		for($i=0;$i<strleng($y);++$i){
 			$e=substri($y,$i,1);
 			if(!isset($de_table[$e])){
 				addmsg(WARN,'Unknown symbol.');
@@ -1000,7 +999,7 @@ function base_conv($s,$flag=0,$from=NULL,$symbol1=NULL,$to=NULL,$symbol2=NULL){
 		}
 		$pret=array();
 		if($to==10){
-			for($i=2;$i<strlen($pval);$i++){
+			for($i=2;$i<strlen($pval);++$i){
 				$pret[]=substr($pval,$i,1);
 			}
 		}else{
@@ -1017,7 +1016,7 @@ function base_conv($s,$flag=0,$from=NULL,$symbol1=NULL,$to=NULL,$symbol2=NULL){
 			}
 		}
 		$pret2='';
-		for($j=0;$j<=$i;$j++){
+		for($j=0;$j<=$i;++$j){
 			$pret2.=substri($symbol2,$pret[$j],1);
 		}
 		if(count($pret)>0){
@@ -1032,7 +1031,7 @@ function base_divmod($n,$mod){
 	$comp=bccomp($n,$mod);
 	while(($comp==0 || $comp==1) && bccomp($mod,'0')==1){
 		$n=bcsub($n,$mod);
-		$i++;
+		++$i;
 		$comp=bccomp($n,$mod);
 	}
 	return array($i,$n);
@@ -1042,7 +1041,7 @@ function gen_rep($s){
 	global $patterns, $replacements;
 	$p=$patterns;
 	$r=$replacements;
-	for($i=0;$i<count($p);$i++){
+	for($i=0;$i<count($p);++$i){
 		$s=streplace($p[$i], $r[$i], $s);
 	}
 	return $s;
@@ -1053,7 +1052,7 @@ function gen_rep_de($s){
 	$p=$patterns;
 	$r=$replacements;
 	$c=count($p);
-	for($i=0;$i<count($p);$i++){
+	for($i=0;$i<count($p);++$i){
 		$s=streplace($r[$c-$i-1], $p[$c-$i-1], $s);
 	}
 	return $s;
@@ -1063,7 +1062,7 @@ function pcre_mat($s){
 	global $patterns,$patternclip;
 	$p=$patterns;
 	$ret=array();
-	for($i=0;$i<count($p);$i++){
+	for($i=0;$i<count($p);++$i){
 		if(!pcre_valid($p[$i])){
 			continue;
 		}
@@ -1076,13 +1075,16 @@ function pcre_mat($s){
 
 function key_xor($a,$b){
 	$r='';
-	for($i=0;$i<strlen($b);$i++){
+	for($i=0;$i<strlen($b);++$i){
 		$r.=substr($a,$i % strlen($a),1) ^ substr($b,$i,1);
 	}
 	return $r;
 }
 
 function base_en($s){
+	if($_POST['base_bit']=='6' && $_POST['base_pad']=='=' && $_POST['base_symbol']=='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'){
+		return base64_encode($s);
+	}
 	if(pow(2,$_POST['base_bit'])>strleng($_POST['base_symbol'])){
 		addmsg(ERR,'Symbol not enough');
 		return $s;
@@ -1091,7 +1093,7 @@ function base_en($s){
 	$s=bin_en($s);
 	$s.=str_repeat('0',($_POST['base_bit']-(strlen($s)%$_POST['base_bit']))%$_POST['base_bit']);
 	$len=strlen($s)/$_POST['base_bit'];
-	for($i=0;$i<$len;$i++){
+	for($i=0;$i<$len;++$i){
 		$r.=substri($_POST['base_symbol'],base_conv(substr($s,$i*$_POST['base_bit'],$_POST['base_bit']),0,2,'01',10,'0123456789'),1);
 	}
 	$padn=cac_func('lcmc','8,'.$_POST['base_bit'],1)/$_POST['base_bit'];
@@ -1100,11 +1102,14 @@ function base_en($s){
 }
 
 function base_de($s){
+	if($_POST['base_bit']=='6' && $_POST['base_pad']=='=' && $_POST['base_symbol']=='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'){
+		return base64_decode($s);
+	}
 	if(pow(2,$_POST['base_bit'])>strleng($_POST['base_symbol'])){
 		addmsg(ERR,'Symbol not enough');
 		return $s;
 	}
-	for($i=0;$i<strleng($_POST['base_symbol']);$i++){
+	for($i=0;$i<strleng($_POST['base_symbol']);++$i){
 		$e=substri($_POST['base_symbol'],$i,1);
 		$list[$i]=$e;
 		$t=base_conv($i,0,10,'0123456789',2,'01');
@@ -1112,7 +1117,7 @@ function base_de($s){
 	}
 	$so='';
 	$len=strleng($s);
-	for($i=0;$i<$len;$i++){
+	for($i=0;$i<$len;++$i){
 		$e=substri($s,$i,1);
 		if(in_array($e,$list)){
 			$so.=$table[$e];
@@ -1129,22 +1134,22 @@ function chewing($s){
 	$r='';
 	$rett=array();
 	$ret=array();
-	for($i=0;$i<strleng($s);$i++){
+	for($i=0;$i<strleng($s);++$i){
 		$e=substri($s,$i,1);
 		if($_POST['chewing_sort']=='on'){
 			$r.=$table[$e];
 		}else{
 			if(isset($table[$e])){
-				$rett[]=TRUE;
+				$rett[]=true;
 				$ret[]=$table[$e];
 			}else{
-				$rett[]=FALSE;
+				$rett[]=false;
 				$ret[]=$e;
 			}
 		}
 	}
 	if($_POST['chewing_sort']!='on'){
-		for($i=0;$i<count($rett);$i++){
+		for($i=0;$i<count($rett);++$i){
 			if($rett[$i]){
 				$ret[$i]=preg_replace('/^(\\d+);( ?)$/','&#\\1;\\2',$ret[$i]);
 			}
@@ -1152,10 +1157,10 @@ function chewing($s){
 		return implode('',$ret);
 	}
 	$k=explod(" ",$r);
-	for($i=0;$i<count($k);$i++){
+	for($i=0;$i<count($k);++$i){
 		$k[$i]=substr($k[$i],0,strlen($k[$i])-1);
 		$m=explode(";",$k[$i]);
-		for($j=0;$j<count($m);$j++){
+		for($j=0;$j<count($m);++$j){
 			if($m[$j]>=12549 && $m[$j]<=12569){
 				$m[$j]-=10000;
 			}
@@ -1167,7 +1172,7 @@ function chewing($s){
 			}
 		}
 		sort($m);
-		for($j=0;$j<count($m);$j++){
+		for($j=0;$j<count($m);++$j){
 			if($m[$j]>=2549 && $m[$j]<=2569){
 				$m[$j]+=10000;
 			}
@@ -1190,7 +1195,7 @@ function chewing($s){
 
 function bin_en($s){
 	$t='';
-	for($i=0;$i<strlen($s);$i++){
+	for($i=0;$i<strlen($s);++$i){
 		$e=decbin(ord(substr($s, $i,1)));
 		$t.=str_repeat('0', 8-strlen($e));
 		$t.=$e;
@@ -1202,7 +1207,7 @@ function bin_de($s){
 	$s=preg_replace("/[^01]/",'',$s);
 	$t='';
 	$s=str_repeat('0', (8-strlen($s)%8)%8).$s;
-	for($i=0;$i<(strlen($s)/8);$i++){
+	for($i=0;$i<(strlen($s)/8);++$i){
 		$t.=chr(bindec(substr($s, $i*8, 8)));
 	}
 	return $t;
@@ -1214,10 +1219,10 @@ if(mb()){
 			$ret=array();
 			$c=0;
 			$ret[$c]=$s;
-			while(($e=mb_strpos($ret[$c],$a))!==FALSE){
+			while(($e=mb_strpos($ret[$c],$a))!==false){
 				$ret[$c+1]=mb_substr($ret[$c],$e+mb_strlen($a));
 				$ret[$c]=mb_substr($ret[$c],0,$e);
-				$c++;
+				++$c;
 			}
 			return $ret;
 		}
@@ -1234,10 +1239,10 @@ if(mb()){
 		$ret=array();
 		$c=0;
 		$ret[$c]=$s;
-		while(($e=mb_stripos($ret[$c],$a))!==FALSE){
+		while(($e=mb_stripos($ret[$c],$a))!==false){
 			$ret[$c+1]=mb_substr($ret[$c],$e+mb_strlen($a));
 			$ret[$c]=mb_substr($ret[$c],0,$e);
-			$c++;
+			++$c;
 		}
 		return $ret;
 	}
@@ -1254,10 +1259,10 @@ if(!function_exists('iexplode')){
 		$ret=array();
 		$c=0;
 		$ret[$c]=$s;
-		while(($e=stripos($ret[$c],$a))!==FALSE){
+		while(($e=stripos($ret[$c],$a))!==false){
 			$ret[$c+1]=substr($ret[$c],$e+strlen($a));
 			$ret[$c]=substr($ret[$c],0,$e);
-			$c++;
+			++$c;
 		}
 		return $ret;
 	}
@@ -1271,7 +1276,7 @@ function explod($a,$s){
 	if(mbs()){
 		if($a==''){
 			$ret=array();
-			for($i=0;$i<mb_strlen($s);$i++){
+			for($i=0;$i<mb_strlen($s);++$i){
 				$ret[]=mb_substr($s,$i,1);
 			}
 			return $ret;
@@ -1284,7 +1289,7 @@ function explod($a,$s){
 	}else{
 		if($a==''){
 			$ret=array();
-			for($i=0;$i<strlen($s);$i++){
+			for($i=0;$i<strlen($s);++$i){
 				$ret[]=substr($s,$i,1);
 			}
 			return $ret;
@@ -1305,7 +1310,7 @@ function strimwidth($s){
 }
 
 function array_values_recursive($a,&$arr){
-	for($i=0;$i<count($a);$i++){
+	for($i=0;$i<count($a);++$i){
 		if(is_array($a[$i])){
 			array_values_recursive($a[$i],$arr);
 		}else{
@@ -1322,7 +1327,7 @@ function super_explode($s,$lv=NULL){
 		return $s;
 	}
 	$a=explod($_POST['ssep_de'][$lv],$s);
-	for($i=0;$i<count($a);$i++){
+	for($i=0;$i<count($a);++$i){
 		$a[$i]=super_explode($a[$i],$lv-1);
 	}
 	return $a;
@@ -1333,7 +1338,7 @@ function statistics($s){
 	$arr=array();
 	array_values_recursive($a,$arr);
 	if($_POST['casei']=='on'){
-		for($i=0;$i<count($arr);$i++){
+		for($i=0;$i<count($arr);++$i){
 			$arr[$i]=mb()?mb_strtolower($arr[$i]):strtolower($arr[$i]);
 		}
 	}
@@ -1368,9 +1373,9 @@ function cac_pre($s){
 		return $s;
 	}
 	$f=0;
-	for($i=0;$i<strlen($m);$i++){
+	for($i=0;$i<strlen($m);++$i){
 		if(substr($m,$i,1)=='('){
-			$f++;
+			++$f;
 		}elseif(substr($m,$i,1)==')'){
 			$f--;
 		}
@@ -1387,7 +1392,7 @@ function cac_pre($s){
 	$p=0;
 	$t='';
 	$temp=array();
-	for($i=0;$i<strlen($m);$i++){
+	for($i=0;$i<strlen($m);++$i){
 		$e=substr($m,$i,1);
 		if($e=='|'){
 			if($f==0){
@@ -1425,14 +1430,14 @@ function cac_pre($s){
 	if(preg_match('/[+\-*\/\^%,]{2,}/',$m)){
 		addmsg(ERR,'Wrong operator');
 	}
-	for($i=0;$i<count($func);$i++){
+	for($i=0;$i<count($func);++$i){
 		$m=preg_replace('/([!)>}])'.$func[$i].'/','\1*'.$func[$i],$m);
 	}
-	for($i=0;$i<count($func_s);$i++){
+	for($i=0;$i<count($func_s);++$i){
 		$m=preg_replace('/'.$func_s[$i].'(<[^>]*>)/',$func_s[$i].'(\1)',$m);
 	}
 	$t=$m;
-	for($i=0;$i<count($func);$i++){
+	for($i=0;$i<count($func);++$i){
 		$t=str_replace($func[$i].'(','',$t);
 	}
 	$t=preg_replace('/<[^>]*>/i','',$t);
@@ -1504,7 +1509,7 @@ while(!ereg('^<[^>]*>$',$s)){
 	}
 	if(preg_match('/('.$flist.')\((<[^>]*>(,<[^>]*>)*)\)/',$s)){
 		#func;
-		for($i=0;$i<count($func);$i++){
+		for($i=0;$i<count($func);++$i){
 			$s=preg_replace('/'.$func[$i].'\((<[^>]*>(,<[^>]*>)*)\)/e','cac_func("'.$func[$i].'","\1")',$s);
 		}
 		continue;
@@ -1519,7 +1524,7 @@ while(!ereg('^<[^>]*>$',$s)){
 		return '<0>';
 	}
 	if($s==$z){
-		$count++;
+		++$count;
 	}else{
 		$z=$s;
 		$count=0;
@@ -1538,7 +1543,7 @@ function cac_func($f,$s,$tqwe=0){
 	$a=explode(',',$s);
 	$c=count($a);
 	if($tqwe==0){
-		for($i=0;$i<$c;$i++){
+		for($i=0;$i<$c;++$i){
 			$a[$i]=substr($a[$i],1,strlen($a[$i])-2);
 		}
 	}
@@ -1554,7 +1559,7 @@ function cac_func($f,$s,$tqwe=0){
 		$r=pow($a[0],1/$a[1]);
 	}elseif($f=='gcd'){
 		$q=$a[0];
-		for($i=1;$i<$c;$i++){
+		for($i=1;$i<$c;++$i){
 			$q=cac_func('gcdr',$q.','.$a[$i],1);
 		}
 		$r=$q;
@@ -1563,7 +1568,7 @@ function cac_func($f,$s,$tqwe=0){
 		$r=bc()?bcmul(bcdiv($a[0],$gcd),$a[1]):$a[0]/$gcd*$a[1];
 	}elseif($f=='lcm'){
 		$r=$a[0];
-		for($i=1;$i<$c;$i++){
+		for($i=1;$i<$c;++$i){
 			$r=cac_func('lcmc',$r.','.$a[$i],1);
 		}
 	}elseif($f=='plus'){
@@ -1579,7 +1584,7 @@ function cac_func($f,$s,$tqwe=0){
 		$r=bc()?bcdiv($a[0],$a[1]):$a[0]/$a[1];
 	}elseif($f=='sum'){
 		$r=0;
-		for($i=0;$i<$c;$i++){
+		for($i=0;$i<$c;++$i){
 			$r=bc()?bcadd($r,$a[$i]):$r+$a[$i];
 		}
 	}elseif($f=='average'){
@@ -1589,7 +1594,7 @@ function cac_func($f,$s,$tqwe=0){
 		$ave=cac_func('average',implode(',',$a),1);
 		$r='0';
 		if(bc()){
-			for($i=0;$i<$c;$i++){
+			for($i=0;$i<$c;++$i){
 				$tmp=bcsub($a[$i],$ave);
 				if(substr($tmp,0,1)=='-'){
 					$tmp=substr($tmp,1);
@@ -1598,7 +1603,7 @@ function cac_func($f,$s,$tqwe=0){
 				$r=bcdiv($r,$c);
 			}
 		}else{
-			for($i=0;$i<$c;$i++){
+			for($i=0;$i<$c;++$i){
 				$tmp=$a[$i]+$ave;
 				if($tmp<0){
 					$tmp*=-1;
@@ -1610,14 +1615,14 @@ function cac_func($f,$s,$tqwe=0){
 	}elseif($f=='stdev'){
 		$ave=cac_func('average',implode(',',$a),1);
 		$r=0;
-		for($i=0;$i<$c;$i++){
+		for($i=0;$i<$c;++$i){
 			$r=bc()?bcadd($r,bcpow(bcsub($a[$i],$ave),'2')):$r+pow($a[$i]-$ave,2);
 		}
 		$r=bc()?bcsqrt(bcdiv($r,$c-1)):sqrt($r/($c-1));
 	}elseif($f=='stdevp'){
 		$ave=cac_func('average',implode(',',$a),1);
 		$r=0;
-		for($i=0;$i<$c;$i++){
+		for($i=0;$i<$c;++$i){
 			$r=bc()?bcadd($r,bcpow(bcsub($a[$i],$ave),'2')):$r+pow($a[$i]-$ave,2);
 		}
 		$r=bc()?bcsqrt(bcdiv($r,$c)):sqrt($r/$c);
@@ -1641,7 +1646,7 @@ function cac_func($f,$s,$tqwe=0){
 			addmsg(ERR,'Argument should be an integer');
 		}
 		$i=1;
-		for($j=1;$j<=$a[0];$j++){
+		for($j=1;$j<=$a[0];++$j){
 			if(bc()){
 				$i=bcmul($i,$j);
 			}else{
@@ -1659,19 +1664,19 @@ function cac_func($f,$s,$tqwe=0){
 		$r=cac_func('fac',$a[0],1)/cac_func('fac',$a[1],1)/cac_func('fac',cac_func('minus',$a[0].','.$a[1],1),1);
 		
 	}elseif($f=='abs'){
-		for($i=0;$i<$c;$i++){
+		for($i=0;$i<$c;++$i){
 			if(substr($a[$i],0,1)=='-'){
 				$a[$i]=substr($a[$i],1);
 			}
 		}
 		$r=implode(',',$a);
 	}elseif($f=='ceil'){
-		for($i=0;$i<$c;$i++){
+		for($i=0;$i<$c;++$i){
 			$a[$i]=ceil($a[$i]);
 		}
 		$r=implode(',',$a);
 	}elseif($f=='floor'){
-		for($i=0;$i<$c;$i++){
+		for($i=0;$i<$c;++$i){
 			$a[$i]=floor($a[$i]);
 		}
 		$r=implode(',',$a);
@@ -1799,7 +1804,7 @@ if(bc()){
 				$e[$z]=1;
 			}
 			while(bcmod($t,$i)=='0'){
-				$e[$z]++;
+				++$e[$z];
 				$t=bcdiv($t,$i);
 			}
 			$i=bcadd($i,1);
@@ -1818,17 +1823,17 @@ if(bc()){
 				$e[$z]=1;
 			}
 			while($t%$i==0){
-				$e[$z]++;
+				++$e[$z];
 				$t=$t/$i;
 			}
-			$i++;
+			++$i;
 			if($bak==$t){
 				addmsg(ERR,'The number might be too large.');
 				break;
 			}
 		}
 }
-		for($i=0;$i<=$z;$i++){
+		for($i=0;$i<=$z;++$i){
 			$b[$i]=preg_replace('/\.0+$/','',$b[$i]);
 			$m.='&nbsp;&nbsp;'.$b[$i].($e[$i]>1?('<sup>'.$e[$i].'</sup>'):'');
 		}
@@ -1842,7 +1847,7 @@ if(bc()){
 
 function hex_en($s){
 	$t='';
-	for($i=0;$i<strlen($s);$i++){
+	for($i=0;$i<strlen($s);++$i){
 		$e=dechex(ord(substr($s, $i,1)));
 		$t.=str_repeat('0', 2-strlen($e));
 		$t.=$e;
@@ -1855,7 +1860,7 @@ function hex_de($s){
 	$t='';
 	$s=str_repeat('0', (2-strlen($s)%2)%2).$s;
 	$n=strlen($s)/2;
-	for($i=0;$i<$n;$i++){
+	for($i=0;$i<$n;++$i){
 		$t.=chr(hexdec(substr($s, $i*2, 2)));
 	}
 	return $t;
@@ -1875,7 +1880,7 @@ function ASCIIFilter($s){
 	}else{
 		$r=substr($s,0,1);
 	}
-	for($i=1;$i<strlen($s);$i++){
+	for($i=1;$i<strlen($s);++$i){
 		if(substr($s,$i,1)==$q){
 			$r.=' SP';
 		}elseif(ord(substr($s,$i,1))>127){
@@ -1911,7 +1916,7 @@ function sqr($s,$codec=0){
 		$left=$l%$con;
 		$l-=$left;
 		$l/=$con;
-		for($i=0;$i<$l;$i++){
+		for($i=0;$i<$l;++$i){
 			$ret.=$func(substri($s,$i*$con,$con),$r,$c);
 		}
 		$ret.=$func(substri($s,$i*$con),$r,$c);
@@ -1924,19 +1929,19 @@ function sqr($s,$codec=0){
 function sqr_en_part($s,$r,$c){
 	$l=strleng($s);
 	$p=0;
-	for($i=0;$i<$r;$i++){
-		for($j=0;$j<$c;$j++){
+	for($i=0;$i<$r;++$i){
+		for($j=0;$j<$c;++$j){
 			if($p<$l){
 				$a[$i][$j]=substri($s,$p,1);
 			}else{
 				$a[$i][$j]='';
 			}
-			$p++;
+			++$p;
 		}
 	}
 	$ret='';
-	for($j=0;$j<$c;$j++){
-		for($i=0;$i<$r;$i++){
+	for($j=0;$j<$c;++$j){
+		for($i=0;$i<$r;++$i){
 			$ret.=$a[$i][$j];
 		}
 	}
@@ -1946,19 +1951,19 @@ function sqr_en_part($s,$r,$c){
 function sqr_de_part($s,$r,$c){
 	$l=strleng($s);
 	$p=0;
-	for($j=0;$j<$c;$j++){
-		for($i=0;$i<$r;$i++){
+	for($j=0;$j<$c;++$j){
+		for($i=0;$i<$r;++$i){
 			if(($i*$c)+$j<$l && $p<$l){
 				$a[$i][$j]=substri($s,$p,1);
-				$p++;
+				++$p;
 			}else{
 				$a[$i][$j]='';
 			}
 		}
 	}
 	$ret='';
-	for($i=0;$i<$r;$i++){
-		for($j=0;$j<$c;$j++){
+	for($i=0;$i<$r;++$i){
+		for($j=0;$j<$c;++$j){
 			$ret.=$a[$i][$j];
 		}
 	}
@@ -1974,7 +1979,7 @@ function ASCIIFilter_de($s){
 	}
 	$r='';
 	$a=explode($q,$s);
-	for($i=0;$i<count($a);$i++){
+	for($i=0;$i<count($a);++$i){
 		if($a[$i]=='SP'){
 			$r.=' ';
 		}elseif(preg_match("/^[a-f0-9]{2}$/i",$a[$i])){
@@ -1988,7 +1993,7 @@ function ASCIIFilter_de($s){
 
 function dec_en($s){
 	$t='';
-	for($i=0;$i<strlen($s);$i++){
+	for($i=0;$i<strlen($s);++$i){
 		$e=ord(substr($s, $i,1));
 		$t.=str_repeat('0', 3-strlen($e));
 		$t.=$e;
@@ -2000,7 +2005,7 @@ function dec_de($s){
 	$s=preg_replace("/[^0-9]/",'',$s);
 	$t='';
 	$s=str_repeat('0', (3-strlen($s)%3)%3).$s;
-	for($i=0;$i<(strlen($s)/3);$i++){
+	for($i=0;$i<(strlen($s)/3);++$i){
 		$t.=chr(substr($s, $i*3, 3));
 	}
 	return $t;
@@ -2008,7 +2013,7 @@ function dec_de($s){
 
 function oct_en($s){
 	$t='';
-	for($i=0;$i<strlen($s);$i++){
+	for($i=0;$i<strlen($s);++$i){
 		$e=decoct(ord(substr($s, $i,1)));
 		$t.=str_repeat('0', 3-strlen($e));
 		$t.=$e;
@@ -2020,7 +2025,7 @@ function oct_de($s){
 	$s=preg_replace("/[^0-7]/",'',$s);
 	$t='';
 	$s=str_repeat('0', (3-strlen($s)%3)%3).$s;
-	for($i=0;$i<(strlen($s)/3);$i++){
+	for($i=0;$i<(strlen($s)/3);++$i){
 		$t.=chr(octdec(substr($s, $i*3, 3)));
 	}
 	return $t;
@@ -2034,7 +2039,7 @@ function preg_explode($a,$s){
 	$c=0;
 	preg_match_all($a,$s,$arr);
 	$ret[0]=$s;
-	for($i=0;$i<count($arr[0]);$i++){
+	for($i=0;$i<count($arr[0]);++$i){
 		$p=strpos($ret[$c],$arr[0][$i]);
 		$ret[$c+1]=$arr[0][$i];
 		$ret[$c+2]=substr($ret[$c],$p+strlen($arr[0][$i]));
@@ -2048,7 +2053,7 @@ function str_mutate($s){
 	$ret='';
 	$tmp='';
 	$s.=' ';
-	for($i=0;$i<strleng($s);$i++){
+	for($i=0;$i<strleng($s);++$i){
 		$e=substri($s,$i,1);
 		if(preg_match('/[^a-z]/is',$e) || strlen($e)>1){
 			$a=$c='';
@@ -2079,9 +2084,9 @@ function str_mut_fit($s){
 	$list='bdfghjklpqty';
 	$ret='';
 	$tmp='';
-	for($i=0;$i<strlen($s);$i++){
+	for($i=0;$i<strlen($s);++$i){
 		$e=substr($s,$i,1);
-		if(strpos($list,$e)!==FALSE){
+		if(strpos($list,$e)!==false){
 			$ret.=str_shuffle($tmp).$e;
 			$tmp='';
 		}else{
@@ -2094,7 +2099,7 @@ function str_mut_fit($s){
 
 function ent_en($s){
 	$r='';
-	for($i=0;$i<strleng($s);$i++){
+	for($i=0;$i<strleng($s);++$i){
 		$e=substri($s,$i,1);
 		switch($e){
 			case "\\": $r.='\\\\'; break;
@@ -2112,7 +2117,7 @@ function ent_en($s){
 
 function ent_de($s){
 	$r='';
-	for($i=0;$i<strleng($s);$i++){
+	for($i=0;$i<strleng($s);++$i){
 		if(substri($s,$i,1)!="\\"){
 			$r.=substri($s,$i,1);
 		}else{
@@ -2125,7 +2130,7 @@ function ent_de($s){
 				case "0": $r.="\0"; break;
 				default: $r.=("\\".substri($s,$i+1,1)); break;
 			}
-			$i++;
+			++$i;
 		}
 	}
 	return $r;
@@ -2153,6 +2158,7 @@ function en($method, $s){
 		case 'spe': $s=htmlspecialchars($s); break;
 		case 'hen': $s=((mbs())?mb_convert_encoding($s,'HTML-ENTITIES'):htmlentities($s)); break;
 		case 'md5': $s=md5($s); break;
+		case 'crypt': $s=crypt($s,$_POST['crypt_salt']); break;
 		case 'sha1': $s=sha1($s); break;
 		case 'crc16': $s=sprintf("%x",crc32($s)); break;
 		case 'crc32': $s=sprintf("%x",crc32($s)); break;
@@ -2208,6 +2214,7 @@ function de($method, $s){
 		case 'nbase': $s=base_conv($s,1); break;
 		case 'base': $s=base_de($s); break;
 		case 'md5': addmsg(INFO,'<a href="http://www.md5lookup.com/?category=main&page=search" target="_blank">http://www.md5lookup.com</a>'); break;
+		case 'crypt': break;
 		case 'stu': break;
 		case 'crv': $s=case_rev($s); break;
 		case 'stl': break;
@@ -2253,7 +2260,7 @@ function de($method, $s){
 function proc($s){
 if($_POST['processs']=='en'){
 	$bat=explode(",",$_POST['batch2']);
-	for($i=0;$i<count($bat);$i++){
+	for($i=0;$i<count($bat);++$i){
 		list($a,$m)=explode("-",$bat[$i]);
 		if(trim($a)=="e"){
 			$s=en(trim($m),$s);
@@ -2280,16 +2287,16 @@ return $s;
 
 function in_opt_range($n,$lv,$x){
 	if(empty($GLOBALS['opt_oper'][$lv])){
-		return TRUE;
+		return true;
 	}
 	if($_POST['plus_1']=='on'){
-		$n++;
-		$x++;
+		++$n;
+		++$x;
 	}
 	$arr=explode(',',$GLOBALS['opt_oper'][$lv]);
 	$ret=false;
-	for($i=0;$i<count($arr);$i++){
-		$flag=FALSE;
+	for($i=0;$i<count($arr);++$i){
+		$flag=false;
 		$arr[$i]=preg_replace('/[^0-9\\-?!*$%+]/','',$arr[$i]);
 		while(substr($arr[$i],0,1)=='!'){
 			$flag=!$flag;
@@ -2297,10 +2304,10 @@ function in_opt_range($n,$lv,$x){
 		}
 		$arr[$i]=str_replace('!','',$arr[$i]);
 		if(strlen($arr[$i])==0){
-			$ret=TRUE;
+			$ret=true;
 		}elseif(preg_match('/^\\d+$/',$arr[$i])){
 			if($n==$arr[$i]){
-				$ret=TRUE;
+				$ret=true;
 			}
 		}elseif(preg_match('/^\\d+-$/',$arr[$i])){
 			$no=preg_replace('/^(\\d+)-$/','\\1',$arr[$i]);
@@ -2340,7 +2347,7 @@ function in_opt_range($n,$lv,$x){
 			}
 		}elseif(preg_match('/[*?]/',$arr[$i])){
 			$pat='';
-			for($i=0;$i<strlen($arr[$i]);$i++){
+			for($i=0;$i<strlen($arr[$i]);++$i){
 				$e=substr($arr[$i],$i,1);
 				if($e=='*'){
 					$pat.='\\d*';
@@ -2384,7 +2391,7 @@ function pro($s,$lv){
 		if(in_opt_range($ct,$lv,$x)){
 			$a[$i]=pro($a[$i],$lv+1);
 		}
-		$ct++;
+		++$ct;
 	}
 	if($_POST['sep_pcre']=='on'){
 		$s=implode('',$a);
@@ -2402,12 +2409,12 @@ function radio($name,$val,$des){
 	echo '/><label for="'.$name.'_'.$val.'">'.$des.'</label>';
 }
 
-function chkbx($tag,$des,$enable=TRUE){
+function chkbx($tag,$des,$enable=true){
 	echo '<input type="checkbox" id="'.$tag.'" name="'.$tag.'" ';
 	if($_POST[$tag]=='on'){
 		echo 'checked="checked" ';
 	}
-	if($enable!==TRUE){
+	if($enable!==true){
 		echo 'disabled="disabled" ';
 	}
 	echo '/><label for="'.$tag.'">'.$des.'</label>';
@@ -2429,13 +2436,13 @@ document.getElementById('bt').value='new Amidala['+count+']';
 }
 function newsmith(){
 smitharray[count]=window.open('<?echo $_SERVER['PHP_SELF']?>?smith='+count);
-count++;
+++count;
 document.getElementById('bt').value='new Amidala['+count+']';
 }
 function go(){
 var alist=document.getElementById('order').value.split(',');
 var nextptr=new Object;
-for(i=0;i<alist.length-1;i++){
+for(i=0;i<alist.length-1;++i){
 	id=parseInt(alist[i+1]);
 	if(parseInt(alist[i])==parseInt(document.getElementById('trigger').value) && typeof(smitharray[id])!='undefined' && !smitharray[id].closed){
 		smitharray[id].document.getElementById('form').submit();
@@ -2524,7 +2531,7 @@ if($_POST['action']=='yes'){
 	$_POST['ssep']=str_replace("\r\n","\n",$_POST['ssep']);
 	$tmp=explod("\n",$_POST['ssep']);
 	$_POST['ssep_arg']=$_POST['ssep_de']=array();
-	for($i=0;$i<count($tmp);$i++){
+	for($i=0;$i<count($tmp);++$i){
 		list($_POST['ssep_de'][$i],$_POST['ssep_arg'][$i])=explod("\n",$tmp[$i]);
 		$_POST['ssep_de'][$i]=ent_de($_POST['ssep_de'][$i]);
 	}
@@ -2535,7 +2542,7 @@ if($_POST['action']=='yes'){
 	$_POST['mut_r']=abs(intval($_POST['mut_r']));
 	$GLOBALS['sep_array']=explod("\n",$_POST['sepr']);
 	if($_POST['sep']=="on"){
-	for($i=0;$i<count($GLOBALS['sep_array']);$i++){
+	for($i=0;$i<count($GLOBALS['sep_array']);++$i){
 		$tmp=explode("\t",$GLOBALS['sep_array'][$i]);
 		$GLOBALS['sep_array'][$i]=ent_de($tmp[0]);
 		$GLOBALS['opt_oper'][$i]=$tmp[1];
@@ -2544,7 +2551,7 @@ if($_POST['action']=='yes'){
 	$tmp=$GLOBALS['sep_array'];
 	sort($tmp);
 	$flag=false;
-	for($i=1;$i<count($tmp);$i++){
+	for($i=1;$i<count($tmp);++$i){
 		if($tmp[$i]==$tmp[$i-1]){
 			$flag=true;
 		}
@@ -2575,7 +2582,7 @@ if($_POST['action']=='yes'){
 	}
 	$_POST['bbs2html_headntail']=$_POST['passtonext']=$_POST['plus_1']=$_POST['jmpmsg']=$_POST['sess_txt_also']=$_POST['scr']='on';
 	$_POST['bbs2html_style_where']='class';
-	$_POST['mfix_pad']='';
+	$_POST['crypt_salt']=$_POST['mfix_pad']='';
 	$_POST['curtab']='gen';
 	$_POST['input']='text';
 	$_POST['casei']='off';
@@ -2627,14 +2634,14 @@ if($_POST['action']=='yes'){
 }
 $pattern=str_replace("\r\n","\n",$_POST['pattern']);
 $patterns=explod("\n",$pattern);
-for($i=0;$i<count($patterns);$i++){
+for($i=0;$i<count($patterns);++$i){
 	list($patterns[$i],$patternclip[$i])=explod("\t",$patterns[$i]);
 	$patternclip[$i]=abs(intval($patternclip[$i]));
 	$patterns[$i]=ent_de($patterns[$i]);
 }
 $replacement=str_replace("\r\n","\n",$_POST['replacement']);
 $replacements=explod("\n",$replacement);
-for($i=0;$i<count($replacements);$i++){
+for($i=0;$i<count($replacements);++$i){
 	$replacements[$i]=ent_de($replacements[$i]);
 }
 if(!isset($_POST['order'])){
@@ -2642,7 +2649,7 @@ if(!isset($_POST['order'])){
 }else{
 	$n=0;
 	$m=1;
-	for($i=0;$i<8;$i++){
+	for($i=0;$i<8;++$i){
 		$n+=substr($_POST['order'],$i,1);
 		$m*=substr($_POST['order'],$i,1);
 	}
@@ -2873,11 +2880,11 @@ function showtab(t){
 	var tabs = new Array();
 	var i;
 <?
-for($i=0;$i<count($tabs);$i++){
+for($i=0;$i<count($tabs);++$i){
 	echo 'tabs['.$i."]='".$tabs[$i][0]."';\n";
 }
 ?>
-	for(i=0;i<tabs.length;i++){
+	for(i=0;i<tabs.length;++i){
 		getobj(tabs[i]).style.display='none';
 		getobj(tabs[i]+'t').style.backgroundColor='#ccf';
 		getobj(tabs[i]+'t').style.color='#777';
@@ -3028,7 +3035,7 @@ echo ($_POST['ssp']=="on")?$s:htmlspecialchars($s);
 <textarea id="backup" style="display:none;"><?echo htmlspecialchars($backup);?></textarea>
 <div>
 <?
-for($i=0;$i<count($tabs);$i++){
+for($i=0;$i<count($tabs);++$i){
 ?>
 <span class="tab" id="<?echo $tabs[$i][0];?>t" onclick="showtab('<?echo $tabs[$i][0];?>')"><?echo $tabs[$i][1];?></span>
 <?
@@ -3041,7 +3048,7 @@ if(!isset($_REQUEST['smith'])){?><span class="tab" style="color:#777; background
 <input type="radio" name="input" onclick="getobj('help').innerHTML='Auto turn on \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=true; getobj('fin').disabled=true;" id="intext" value="text" <?echo $_POST['input']=='text'?'checked="checked"':'';?>/><label for="intext">Text Area</label>
 <input type="radio" onclick="getobj('help').innerHTML='Auto turn off \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=false; getobj('fin').disabled=false;" name="input" id="infile" value="file" <?echo $_POST['input']=='file'?'checked="checked"':'';?>/><label for="infile">File</label><input type="file" id="fin" name="fin" <?echo $_POST['input']=='file'?'':'disabled="disabled"';?>/>
 <?if(isset($_SESSION['data'])){?><input type="radio" name="input" onclick="getobj('help').innerHTML='Auto turn off \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=false; getobj('fin').disabled=true;" id="insession" value="session" <?echo $_POST['input']=='session'?'checked="checked"':'';?>/><label for="insession">Session</label><select name="in_sess_slot"><?
-for($i=0;$i<count($_SESSION['data']);$i++){
+for($i=0;$i<count($_SESSION['data']);++$i){
 echo '<option value="'.$i.'"'.($i==$_POST['in_sess_slot']?' selected="selected"':'').'>Slot '.$i.'</option>';
 }
 ?></select><?}?></td></tr>
@@ -3051,7 +3058,7 @@ echo '<option value="'.$i.'"'.($i==$_POST['in_sess_slot']?' selected="selected"'
 <input type="radio" name="out" onclick="getobj('form').target='_blank'" id="bf" value="blank" <?echo ($_POST['out']=="blank")?'checked="checked" ':'';?>/><label for="bf">Blank Frame</label>
 <input type="radio" name="out" onclick="getobj('form').target='_self'" id="sess" value="session" <?echo ($_POST['out']=='session')?'checked="checked" ':'';?>/><label for="sess">Session</label>
 <select name="out_sess_slot"><?
-for($i=0;$i<count($_SESSION['data']);$i++){
+for($i=0;$i<count($_SESSION['data']);++$i){
 	echo '<option value="'.$i.'"'.($i==$_POST['out_sess_slot']?' selected="selected"':'').'>Slot '.$i.'</option>';
 }
 if($i<8){ echo '<option value="'.$i.'">Slot '.$i.' (New)</option>'; }
@@ -3102,6 +3109,7 @@ array('rot','StringRotate','no'),
 array('mut','StringMutate','ow'),
 array('rf','Square','no'),
 array('md5','MD5','no'),
+array('crypt','Crypt','ow'),
 array('sha1','SHA-1','ow'),
 array('crc16','CRC16','ow'),
 array('crc32','CRC32','ow'),
@@ -3114,7 +3122,7 @@ array('dec','Dec','no'),
 array('hex','Hex','no'),
 array('bbs','BBS -> HTML','ow'),
 );
-for($i=0;$i<count($methods_table);$i++){
+for($i=0;$i<count($methods_table);++$i){
 	echo '<option ';
 	if($methods_table[$i][2]!='no'){
 		echo 'class="'.$methods_table[$i][2].'" ';
@@ -3162,19 +3170,19 @@ SubSeparator:<br /><textarea onfocus="szobj='ssep'" name="ssep" id="ssep" onkeyd
 <tr><td>BitOrder:</td><td><input type="text" name="order" maxlength="8" size="6" value="<?echo $_POST['order'];?>" /></td></tr>
 <tr><td>Transpose:</td><td><select name="transpose">
 <?
-for($i=0;$i<12;$i++){
+for($i=0;$i<12;++$i){
 echo '<option value="'.$i.'"'.(($_POST['transpose']==$i)?' selected="selected"':'').'>'.$i.'</option>'."\n";
 }
 ?>
 </select></td></tr>
 <tr><td>Rotate:</td><td>Letter<select name="rot">
 <?
-for($i=0;$i<26;$i++){
+for($i=0;$i<26;++$i){
 echo '<option value="'.$i.'"'.(($_POST['rot']==$i)?' selected="selected"':'').'>'.$i.'</option>'."\n";
 }
 ?></select> Number<select name="nrot">
 <?
-for($i=0;$i<10;$i++){
+for($i=0;$i<10;++$i){
 echo '<option value="'.$i.'"'.(($_POST['nrot']==$i)?' selected="selected"':'').'>'.$i.'</option>'."\n";
 }
 ?></select></td></tr>
@@ -3196,6 +3204,7 @@ Sign<input type="text" name="base_sign2" size="2" value="<?echo $_POST['base_sig
 <tr><td>URL:</td><td><?chkbx('url_raw','RFC1738');?></td></tr>
 <tr><td>Chewing:</td><td><?chkbx('chewing_sort','Sort');?></td></tr>
 <tr><td>Repeat:</td><td><input type="text" name="rpt" size="2" value="<?echo $_POST['rpt'];?>" /></td></tr>
+<tr><td>Crypt:</td><td>Salt<input type="text" name="crypt_salt" size="20" value="<?echo $_POST['crypt_salt'];?>" /></td></tr>
 <tr><td rowspan="3">To Table:</td><td>Border: <?chkbx('ttb_brd','Outer');?> <?chkbx('ttb_ibrd','Inner');?></td></tr>
 <tr><td><?chkbx('ttb_mono','MonoWidth');?></td></tr>
 <tr><td>Align:<?radio('ttb_align','left','Left');?> <?radio('ttb_align','center','Center');?> <?radio('ttb_align','right','Right');?></td></tr>
