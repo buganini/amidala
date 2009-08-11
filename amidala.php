@@ -25,7 +25,7 @@
 
 $time_begin=mtime();
 #<php>
-$ver_serial='2007011900';
+$ver_serial='2007020800';
 ini_set('display_errors', '0');
 #error_reporting(E_ALL & ~E_NOTICE);
 set_magic_quotes_runtime(0);
@@ -2479,11 +2479,44 @@ function chkbx($tag,$des,$enable=TRUE){
 	echo '/><label for="'.$tag.'">'.$des.'</label>';
 }
 #</function>
-if($_GET['appendix']=="source"){
-	header("Content-Type: text/plain");
+if($_GET['appendix']=='source'){
+	header('Content-Type: text/plain');
 	$r=file_get_contents($_SERVER['SCRIPT_FILENAME']);
 	$r=str_replace("\r\n","\n",$r);
 	die($r);
+}elseif($_GET['appendix']=='connector'){
+	htmlhead();
+?>
+<script type="text/javascript">
+function init(){
+smitharray=new Object;
+count=0;
+document.getElementById('bt').value='new Amidala['+count+']';
+}
+function newsmith(){
+smitharray[count]=window.open('<?echo $_SERVER['PHP_SELF']?>?smith='+count);
+count++;
+document.getElementById('bt').value='new Smith['+count+']';
+}
+function go(){
+var alist=document.getElementById('order').value.split(',');
+var nextptr=new Object;
+for(i=0;i<alist.length-1;i++){
+	id=parseInt(alist[i+1]);
+	if(parseInt(alist[i])==parseInt(document.getElementById('trigger').value) && typeof(smitharray[id])!='undefined' && !smitharray[id].closed){
+		smitharray[id].document.getElementById('form').submit();
+	}
+}
+}
+</script>
+<body onload="init();" style="background:#abf;">
+<input type="button" onClick="newsmith()" id="bt" /><br />
+Order:<input type="text" size="30" id="order" />
+<input type="button" onClick="go()" id="trigger" style="display:none;" />
+</body>
+</html>
+<?
+die();
 }
 #<init>
 if($_POST['action']=='yes'){
@@ -2555,8 +2588,10 @@ if($_POST['action']=='yes'){
 	$_POST['base_sign2']=substri($_POST['base_sign2'],0,1);
 	$_POST['sepr']=str_replace("\r\n","\n",$_POST['sepr']);
 	$_POST['ssep']=str_replace("\r\n","\n",$_POST['ssep']);
-	$_POST['ssep_de']=explod("\n",$_POST['ssep']);
-	for($i=0;$i<count($_POST['ssep_de']);$i++){
+	$tmp=explod("\n",$_POST['ssep']);
+	$_POST['ssep_arg']=$_POST['ssep_de']=array();
+	for($i=0;$i<count($tmp);$i++){
+		list($_POST['ssep_de'][$i],$_POST['ssep_arg'][$i])=explod("\n",$tmp[$i]);
 		$_POST['ssep_de'][$i]=ent_de($_POST['ssep_de'][$i]);
 	}
 	$_POST['ssep_de']=array_reverse($_POST['ssep_de']);
@@ -2604,7 +2639,7 @@ if($_POST['action']=='yes'){
 		unset($_COOKIE[session_name()]);
 		session_destroy();
 	}
-	$_POST['plus_1']=$_POST['jmpmsg']=$_POST['sess_txt_also']=$_POST['scr']='on';
+	$_POST['passtonext']=$_POST['plus_1']=$_POST['jmpmsg']=$_POST['sess_txt_also']=$_POST['scr']='on';
 	$_POST['mfix_pad']='';
 	$_POST['curtab']='gen';
 	$_POST['input']='text';
@@ -2717,14 +2752,24 @@ array('cli','Information'),
 array('msg','Message')
 );
 #</php>
+function htmlhead(){
+global $ver_serial;
 ?>
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=<?echo $_POST['charset'];?>" />
-<title>Amidala - ver. <?echo $ver_serial;
+<title>Amidala<?
+if(isset($_REQUEST['smith'])){
+echo '['.intval($_REQUEST['smith']).']';
+}
+?> - ver. <?echo $ver_serial;
 if(ip()=='127.0.0.1'){
 	echo ' <Local Connection>';
-}?></title>
+}?> </title>
+<?
+}
+htmlhead();
+?>
 <script type="text/javascript">
 var s;
 function doKeyDown(event){
@@ -2748,8 +2793,12 @@ showtab('<?echo ($_POST['jmpmsg']=='on' && count($msg)>0)?'msg':$_POST['curtab']
 <?if(count($msg)==0){?>
 getobj('msgt').style.display='none';
 <?}?>
-getobj('text').focus();
+getobj('text').focus();<?
+if($_POST['action']=='yes' && isset($_REQUEST['smith']) && $_POST['passtonext']){
+echo 'opener.document.getElementById(\'trigger\').value='.$_REQUEST['smith'].';';
+echo 'opener.document.getElementById(\'trigger\').click();';
 }
+?>}
 
 function getobj(t){
 	return document.getElementById(t);
@@ -3004,6 +3053,11 @@ getobj('replacement').cols=70;
 </head>
 <body onload="init();" onkeydown="doKeyDown(event)"><a name="top"></a>
 <form method="post" action="<?echo $_SERVER['PHP_SELF'];?>" name="form" id="form" enctype="multipart/form-data">
+<?
+if(isset($_REQUEST['smith'])){
+echo '<input type="hidden" name="smith" value="'.intval($_REQUEST['smith']).'" />';
+}
+?>
 <input type="hidden" name="action" value="yes" />
 <input type="hidden" name="curtab" id="curtab" value="<?echo $_POST['curtab'];?>" />
 <table><tr>
@@ -3038,7 +3092,7 @@ for($i=0;$i<count($tabs);$i++){
 <span class="tab" id="<?echo $tabs[$i][0];?>t" onclick="showtab('<?echo $tabs[$i][0];?>')"><?echo $tabs[$i][1];?></span>
 <?
 }
-?>
+if(!isset($_REQUEST['smith'])){?><span class="tab" style="color:#777; background:#ccf;" onclick="document.location.href='<?echo $_SERVER['PHP_SELF'];?>?appendix=connector';">Connector</span><?}?>
 </div>
 <div id="gen" class="tabc"><span class="block">
 <table>
@@ -3150,12 +3204,13 @@ for($i=0;$i<count($methods_table);$i++){
 <?chkbx('sess_txt_also','Copy Session output to Textarea');?><br />
 <?chkbx('scr','Skip &lt;CR&gt;');?><br />
 <?chkbx('ssp','Skip HtmlSpecialChars');?><br />
+<?chkbx('passtonext','Pass to Next');?><br />
 <?chkbx('ibk','Enable Undo');?><br />
 Precision: <input type="text" name="scale" size="2" value="<?echo $_POST['scale'];?>" /><br />
 Square Padding: <input type="text" size="10" name="mfix_pad" value="<?echo $_POST['mfix_pad'];?>" />
 </span>
 <span class="block">
-SubSeparator:<br /><textarea onfocus="szobj='ssep'" name="ssep" id="ssep"><?echo $_POST['ssep'];?></textarea>
+SubSeparator:<br /><textarea onfocus="szobj='ssep'" name="ssep" id="ssep" onkeydown="return catchTab(this,event);"><?echo $_POST['ssep'];?></textarea>
 </span></div>
 <div id="arg" class="tabc"><span class="block">
 <table>
@@ -3275,4 +3330,3 @@ echo 'No message.';
 </form>
 </body>
 </html>
-
