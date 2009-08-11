@@ -24,7 +24,7 @@
 */
 #<php>
 #Designed by gmobug, from CNMC.HSNU
-$ver_serial="2006031900";
+$ver_serial="2006092100";
 
 if(empty($_REQUEST['debug'])){
 ini_set('display_errors', '0');
@@ -379,8 +379,8 @@ function a2s($s,$k=1){
 	return $r;
 }
 
-function s2m($s){
-	$s=trim($s);
+function s2m($s,$cl=" \t\n\r\0\x0b"){
+	$s=trim($s,$cl);
 	$r=s2a($s,2);
 	for($i=0;$i<count($r);$i++){
 		$r[$i]=s2a($r[$i]);
@@ -497,6 +497,21 @@ if($_POST['ttb_brd']=="on"){
 	}
 }
 	return $s;
+}
+
+function sqr_reflect($s){
+	$m=s2m($s);
+	$m=mfix($m);
+	$q=count($m);
+	$r=count($m[0]);
+	for($i=0;$i<$q;$i++){
+		for($j=0;$j<$r;$j++){
+			$i2=($_POST['ref_hor']=='on'?$q-$i-1:$i);
+			$j2=($_POST['ref_ver']=='on'?$r-$j-1:$j);
+			$m2[$i][$j]=$m[$i2][$j2];
+		}
+	}
+	return m2s($m2);
 }
 
 function correct($s){
@@ -636,7 +651,7 @@ function matrix_inverse($s){
 					$q=0;
 				}
 			}
-			$r[$i][$j]=determinant(m2s($t));
+			$r[$i][$j]=determinant_core($t);
 			if(($i%2==1) xor ($j%2==1)){
 				$r[$i][$j]*=(-1);
 			}
@@ -651,33 +666,44 @@ function matrix_inverse($s){
 function determinant($s){
 	$m=s2m($s);
 	$m=mfix($m);
-	$r=0;
 	$k=count($m);
 	$l=count($m[0]);
 	if($k!=$l){
 		addmsg(ERR,'Incoherent columns and rows.');
 	}
+	return determinant_core($m);
+}
+
+function determinant_core($m){
+	$r=0;
+	$k=count($m);
 	if($k==2){
 		return $m[0][0]*$m[1][1]-$m[1][0]*$m[0][1];
 	}
-	for($i=0;$i<$k;$i++){
-		$t=1;
-		for($j=0;$j<$k;$j++){
-			$t*=$m[$j][($i+$j)%$k];
+	$f=1;
+	for($w=0;$w<$k;$w++){
+		$mul=$m[$w][0];
+		$m2=array();
+		$i1=0;
+		for($i=0;$i<$k;$i++){
+			if($i!=$w){
+				$m2[$i1]=array();
+				$i2=0;
+				for($j=1;$j<$k;$j++){
+					$m2[$i1][$i2]=$m[$i][$j];
+					$i2++;
+				}
+				$i1++;
+			}
 		}
-		$r+=$t;
-		$t=1;
-		for($j=0;$j<$k;$j++){
-			$t*=$m[$j][($i+$k-$j)%$k];
-		}
-		$r-=$t;
-		
+		$r+=$mul*$f*determinant_core($m2);
+		$f*=-1;
 	}
 	return $r;
 }
 
 function matrix_rotate($s,$ac){
-	$m=s2m($s);
+	$m=s2m($s," \n\r\0\x0b");
 	$m=mfix($m);
 	$t=count($m);
 	$k=count($m[0]);
@@ -694,7 +720,7 @@ function matrix_rotate($s,$ac){
 }
 
 function matrix_transpose($s){
-	$m=s2m($s);
+	$m=s2m($s," \n\r\0\x0b");
 	$m=mfix($m);
 	for($i=0;$i<count($m);$i++){
 		for($j=0;$j<count($m[0]);$j++){
@@ -1427,6 +1453,110 @@ function ASCIIFilter($s){
 	return $r;
 }
 
+function sqr_en($s){
+	$l=strlen($s);
+	if($_POST['sqr_cl']=='auto'){
+		$r=$c=ceil(sqrt($l));
+		addmsg(INFO,'Rows: '.$r);
+		addmsg(INFO,'Colums: '.$c);
+	}else{
+		if(empty($_POST['sqr_r']) || empty($_POST['sqr_c'])){
+			addmsg(ERR,'Incorrect Rows/Columns');
+			return $s;
+		}
+		$r=$_POST['sqr_r'];
+		$c=$_POST['sqr_c'];
+	}
+	$con=$_POST['sqr_r']*$_POST['sqr_c'];
+	if($_POST['sqr_cl']=='man' && $l>$con){
+		$ret='';
+		$left=$l%$con;
+		$l-=$left;
+		$l/=$con;
+		for($i=0;$i<$l;$i++){
+			$ret.=sqr_en_part(substr($s,$i*$con,$con),$r,$c);
+		}
+		$ret.=sqr_en_part(substr($s,$i*$con),$r,$c);
+		return $ret;
+	}else{
+		return sqr_en_part($s,$r,$c);
+	}
+}
+
+function sqr_de($s){
+	$l=strlen($s);
+	if($_POST['sqr_cl']=='auto'){
+		$r=$c=ceil(sqrt($l));
+		addmsg(INFO,'Rows: '.$r);
+		addmsg(INFO,'Colums: '.$c);
+	}else{
+		if(empty($_POST['sqr_r']) || empty($_POST['sqr_c'])){
+			addmsg(ERR,'Incorrect Rows/Columns');
+			return $s;
+		}
+		$r=$_POST['sqr_r'];
+		$c=$_POST['sqr_c'];
+	}
+	$con=$_POST['sqr_r']*$_POST['sqr_c'];
+	if($_POST['sqr_cl']=='man' && $l>$con){
+		$ret='';
+		$left=$l%$con;
+		$l-=$left;
+		$l/=$con;
+		for($i=0;$i<$l;$i++){
+			$ret.=sqr_de_part(substr($s,$i*$con,$con),$r,$c);
+		}
+		$ret.=sqr_de_part(substr($s,$i*$con),$r,$c);
+		return $ret;
+	}else{
+		return sqr_de_part($s,$r,$c);
+	}
+}
+
+function sqr_en_part($s,$r,$c){
+	$l=strlen($s);
+	$p=0;
+	for($i=0;$i<$r;$i++){
+		for($j=0;$j<$c;$j++){
+			if($p<$l){
+				$a[$i][$j]=substr($s,$p,1);
+			}else{
+				$a[$i][$j]='';
+			}
+			$p++;
+		}
+	}
+	$ret='';
+	for($j=0;$j<$c;$j++){
+		for($i=0;$i<$r;$i++){
+			$ret.=$a[$i][$j];
+		}
+	}
+	return $ret;
+}
+
+function sqr_de_part($s,$r,$c){
+	$l=strlen($s);
+	$p=0;
+	for($j=0;$j<$c;$j++){
+		for($i=0;$i<$r;$i++){
+			if(($i*$c)+$j<$l && $p<$l){
+				$a[$i][$j]=substr($s,$p,1);
+				$p++;
+			}else{
+				$a[$i][$j]='';
+			}
+		}
+	}
+	$ret='';
+	for($i=0;$i<$r;$i++){
+		for($j=0;$j<$c;$j++){
+			$ret.=$a[$i][$j];
+		}
+	}
+	return $ret;
+}
+
 function ASCIIFilter_de($s){
 	if(strlen($_POST['ssep_de'][count($_POST['ssep_de'])-1])==1){
 	$q=$_POST['ssep_de'][count($_POST['ssep_de'])-1];
@@ -1488,6 +1618,50 @@ function oct_de($s){
 	return $t;
 }
 
+function str_mutate($s){
+	$ret='';
+	$tmp='';
+	for($i=0;$i<strlen($s);$i++){
+		$e=substr($s,$i,1);
+		if(preg_match('/^[^a-z]$/is',$e)){
+			$ret.=str_mutate_core($tmp).$e;
+			$tmp='';
+		}else{
+			$tmp.=$e;
+		}
+	}
+	$ret.=str_mutate_core($tmp);
+	return $ret;
+}
+
+function str_mutate_core($in){
+	if($_POST['mut_l']+$_POST['mut_r']+1>=strlen($in)){
+		return $in;
+	}
+	$lkeep=substr($in,0,$_POST['mut_l']);
+	$rkeep=substr($in,-1*$_POST['mut_r']);
+	$s=substr($in,$_POST['mut_l'],strlen($in)-$_POST['mut_l']-$_POST['mut_r']);
+	$n=strlen($s);
+	$flag=true;
+	for($i=0;$i<$n;$i++){
+		$arr[$i]=$i;
+	}
+	while($flag){
+		shuffle($arr);
+		$flag=true;
+		for($i=0;$i<$n;$i++){
+			if($arr[$i]!=$i){
+				$flag=false;
+			}
+		}
+	}
+	$ret='';
+	for($i=0;$i<$n;$i++){
+		$ret.=substr($s,$arr[$i],1);
+	}
+	return $lkeep.$ret.$rkeep;
+}
+
 function ie(){
 	if(ereg("MSIE",getenv('HTTP_USER_AGENT'))){
 		return TRUE;
@@ -1544,6 +1718,7 @@ function en($method, $s){
 		case 'stu': $s=strtoupper($s); break;
 		case 'bbs': $s=bbs2html($s); break;
 		case 'bbd': $s=bbs2html_dc($s); break;
+		case 'mut': $s=str_mutate($s); break;
 		case 'ttb': $s=totable($s);break;
 		case 'stl': $s=strtolower($s); break;
 		case 'ucw': $s=ucwords($s); break;
@@ -1551,7 +1726,10 @@ function en($method, $s){
 		case 'cor': $s=correct($s); break;
 		case 'det': $s=determinant($s); break;
 		case 'msk': $s=network($s); break;
-		case 'che': break;
+		case 'ref': $s=sqr_reflect($s); break;
+		case 'che': $s=chewing_de($s); break;
+		case 'chs': $s=chewing_sort_de($s); break;
+		case 'rf'; $s=sqr_en($s); break;
 		case 'cac': $s=cac_pre($s); break;
 		case 'mmtp': $s=matrix_multiply($s); break;
 		case 'mro': $s=matrix_rotate($s,0); break;
@@ -1591,11 +1769,14 @@ function de($method, $s){
 		case 'srt': $k=s2a($s); rsort($k); $s=a2s($k); break;
 		case 'bbd': break;
 		case 'rpt': break;
+		case 'rf'; $s=sqr_de($s); break;
 		case 'pcr': break;
 		case 'det': break;
 		case 'ttb': break;
+		case 'mut': break;
 		case 'sha1': break;
 		case 'msk': break;
+		case 'ref': $s=sqr_reflect($s); break;
 		case 'crc16': break;
 		case 'crc32': break;
 		case 'rep': $s=gen_rep_de($s); break;
@@ -1609,8 +1790,8 @@ function de($method, $s){
 		case 'mtr': $s=matrix_transpose($s); break;
 		case 'cac': break;
 		case 'sln': break;
-		case 'che': $s=chewing_de($s); break;
-		case 'chs': $s=chewing_sort_de($s); break;
+		case 'che': break;
+		case 'chs': break;
 		case 'dna': $s=dna_de($s); break;
 		case 'key': $s=key_xor($_POST['key'],$s); break;
 		case 'bre': $s=bit_rev($s); break;
@@ -1710,15 +1891,14 @@ if(isset($_POST['action'])){
 	$_POST['tcols']=$_POST['tcols']*1;
 	$_POST['transpose']=$_POST['transpose']%12;
 	$_POST['rpt']=$_POST['rpt']*1;
-	$f=fopen($_SERVER['SCRIPT_FILENAME'].".clip","w+");
-	flock($f,LOCK_EX);
-	fwrite($f,stripslashes($_POST['clip']));
-	flock($f,LOCK_UN);
-	fclose($f);
 	$_POST['sepr']=str_replace("\r\n","\n",stripslashes($_POST['sepr']));
 	$_POST['ssep']=str_replace("\r\n","\n",stripslashes($_POST['ssep']));
 	$_POST['caculator']=stripslashes($_POST['caculator']);
 	$_POST['ssep_de']=explode("\n",$_POST['ssep']);
+	$_POST['sqr_r']=intval($_POST['sqr_r']);
+	$_POST['sqr_c']=intval($_POST['sqr_c']);
+	$_POST['mut_l']=intval($_POST['mut_l']);
+	$_POST['mut_r']=intval($_POST['mut_r']);
 for($i=0;$i<count($_POST['ssep_de']);$i++){
 	$_POST['ssep_de'][$i]=ent_de($_POST['ssep_de'][$i]);
 if($_POST['ssep_de'][$i]==''){
@@ -1770,6 +1950,13 @@ addmsg(WARN,'Null SubSeparator');
 	$_POST['ttb_align']="left";
 	$_POST['ibk']='on';
 	$_POST['caculator']='x';
+	$_POST['sqr_r']='';
+	$_POST['sqr_c']='';
+	$_POST['sqr_cl']='auto';
+	$_POST['ref_ver']='on';
+	$_POST['ref_hor']='on';
+	$_POST['mut_l']='1';
+	$_POST['mut_r']='1';
 }
 $pattern=str_replace("\r\n","\n",stripslashes($_POST['pattern']));
 $replacement=str_replace("\r\n","\n",stripslashes($_POST['replacement']));
@@ -1813,8 +2000,7 @@ if($_POST['out']=="file"){
 	a.link{text-decoration:none;color:#808080;}
 	a:hover.link{text-decoration:underline;position:relative;top:1px;left:1px;}
 	.ed {color:#00ff00;}
-	.ue {color:#0000ff;}
-	.ud {color:#ff0000;}
+	.ow {color:#ff0000;}
 	.nd {text-decoration:none; color:#000;}
 	a:visited.nd {color:#000;}
 	.sub {position:relative; left: +1em;}
@@ -1829,7 +2015,7 @@ function ssep(s){
 function assis(s){
 	var msg = new Object;
 //[Begin of Help]
-	msg['raw']='Color Definition:\n<a class="ue">Unsupport Encode</a>\n<a class="ud">Unsupport Decode</a>\n<a class="ed">Encode = Decode</a>';
+	msg['raw']='Color Definition:\n<a class="ow">One Way Function</a>\n<a class="ed">Encode = Decode</a>';
 	msg['srt']='Use 1 SubSeparator\nEncode: ascend sort\nDecode: descend sort';
 	msg['tra']='Unit: semitone\nEncode: raise tone (prefers to b)\nDecode: fall tone (prefers to #)';
 	msg['ttb']='Skip HtmlSpecialChars: Auto On\nUse SubSeparator\n\nGeneral Usage:\nSubSeparator: \\t';
@@ -1924,15 +2110,23 @@ function catchTab(item,e){
 }
 //<End of EnableTabinTextarea>
 var flag=0;
+function collapse(){
+document.getElementById('message').style.display='none';
+document.getElementById('message_exp').style.display='block';
+}
+function expand(){
+document.getElementById('message').style.display='block';
+document.getElementById('message_exp').style.display='none';
+}
 </script>
 </head>
 <body onload="assis(0);" onUnload="if(flag==0)alert('May the force be with you!');"><a name="top"></a>
 <?
 if(count($msg)>0){
-echo '<div style="font-size:10pt;"><fieldset><legend>Message</legend>'.implode('<br />',$msg).'</fieldset></div>';
+echo '<div style="font-size:10pt;"><fieldset><legend>Message</legend><div id="message_exp" style="display:none;">[<a href="#" onClick="expand()">Expand</a>]</div><div id="message">[<a href="#" onClick="collapse()">Collapse</a>]<br />'.implode('<br />',$msg).'</div></fieldset></div>';
 }
 ?>
-<form method="post" action="<?echo $_SERVER['PHP_SELF'];?>" name="form" id="form" enctype="multipart/form-data">
+<form method="post" action="<?echo $_SERVER['PHP_SELF'];?>" name="form" enctype="multipart/form-data">
 <input type="hidden" name="action" value="y" />
 <?
 if(isset($_REQUEST['debug'])){
@@ -1955,8 +2149,8 @@ echo ($_POST['ssp']=="on")?$s:htmlspecialchars($s);
 <input type="checkbox" id="scr" name="scr"<?echo ($_POST['scr']=="on")?' checked="checked"':'';?> /><label for="scr">Skip &lt;CR&gt;</label><br />
 <input type="checkbox" id="ssp" name="ssp"<?echo ($_POST['ssp']=="on")?' checked="checked"':'';?> /><label for="ssp">Skip HtmlSpecialChars</label><br />
 <input type="checkbox" id="ibk" name="ibk"<?echo ($_POST['ibk']=="on")?' checked="checked"':'';?> /><label for="ibk">Enable Undo</label><br />
-<input type="checkbox" onclick="if(this.checked==true){document.getElementById('cpb').style.display='block';}else{document.getElementById('cpb').style.display='none';}" id="cpo" name="cpo"<?echo ($_POST['cpo']=="on")?' checked="checked"':'';?> /><label for="cpo">ClipBoard</label><br />
 <!--
+<input type="checkbox" onclick="if(this.checked==true){document.getElementById('cpb').style.display='block';}else{document.getElementById('cpb').style.display='none';}" id="cpo" name="cpo"<?echo ($_POST['cpo']=="on")?' checked="checked"':'';?> /><label for="cpo">ClipBoard</label><br />
 <input type="checkbox" onclick="if(this.checked==true && document.all.sep.checked==true){document.all.sep.click();}" name="blk"<?echo ($_POST['blk']=="on")?' checked="checked"':'';?> /><a onclick="document.all.blk.click();">Block</a><input type="text" size="10" name="blkpat" value="<?echo $_POST['blkpat'];?>" /><br />
 <input type="checkbox" onclick="if(this.checked==true){document.all.blk.checked=false; document.getElementById('sepa').style.display='block';}else{document.getElementById('sepa').style.display='none';}" name="sep"<?echo ($_POST['sep']=="on")?' checked="checked"':'';?> /><a onclick="document.all.sep.click();">Separator</a><br />
 <div id="sepa" class="sub" style="display:<?echo $_POST['sep']=="on"?'block':'none';?>;"><input type="checkbox" name="upcre"<?echo ($_POST['upcre']=="on")?' checked="checked"':'';?> /><a onclick="document.all.upcre.click();">Use PCRE</a>&nbsp;<a href="javascript:void(null);" class="nd" onclick="if(document.all.sepr.cols>20)document.all.sepr.cols-=20;">&#8592;</a><a href="javascript:void(null);" class="nd" onclick="if(document.all.sepr.rows>5)document.all.sepr.rows-=5;">&#8593;</a><a href="javascript:void(null);" class="nd" onclick="document.all.sepr.cols=20; document.all.sepr.rows=3;">&#9678;</a><a href="javascript:void(null);" class="nd" onclick="document.all.sepr.rows+=5;">&#8595;</a><a href="javascript:void(null);" class="nd" onclick="document.all.sepr.cols+=20;">&#8594;</a><br /><textarea name="sepr" cols="20" rows="3"><?echo $_POST['sepr'];?></textarea></div>
@@ -1967,68 +2161,65 @@ echo ($_POST['ssp']=="on")?$s:htmlspecialchars($s);
 <!--EOD-->
 </fieldset>
 <span style="float:left;"><a href="#" class="link" style="font-weight:bold; color:#333" onclick="flag=1; document.all.form.submit();">[Submit]</a></span><?if(isset($backup)){?><span style="float:left;"><a href="#" class="link" style="font-weight:bold; color:#333" onclick="if(confirm('Sure to undo ?')){document.getElementById('text').value=document.getElementById('backup').value;}">[Undo]</a></span><? }?><span style="float: right;"><a href="#" class="link" onClick="if(confirm('Sure to clear ?')){flag=1; location.href='<?echo $_SERVER['PHP_SELF'];?>'}" style="font-weight:bold; color: #333;">[Clear]</a></span>
-</td></tr></table><fieldset id="cpb" style="display: <?echo $_POST['cpo']=="on"?'block':'none';?>;"><legend>ClipBoard</legend>
-<textarea name="clip" rows="5" cols="90"><?echo htmlspecialchars(file_get_contents($_SERVER['SCRIPT_FILENAME'].".clip"));?></textarea>
+</td></tr></table>
+<!--
+<fieldset id="cpb" style="display: <?#echo $_POST['cpo']=="on"?'block':'none';?>;"><legend>ClipBoard</legend>
+<textarea name="clip" rows="5" cols="90"><?#echo htmlspecialchars(file_get_contents($_SERVER['SCRIPT_FILENAME'].".clip"));?></textarea>
 </fieldset>
+-->
 <?
 if(isset($backup)){
 echo '<textarea rows="5" cols="90" id="backup" style="display:none;">'.$backup.'</textarea>';
 }
 ?>
-<table width="%100"><tr><td>
 <fieldset><legend>I/O</legend>
 <table>
-<tr><td>Input: </td><td><input type="radio" name="input" onclick="getobj('fin').disabled=true;" id="intext" value="text" <?echo $_POST['input']=='text'?'checked="checked"':'';?>/><label for="intext">Text Area</label><input type="radio" onclick="document.all.fin.disabled=false;" name="input" id="infile" value="file" <?echo $_POST['input']=='file'?'checked="checked"':'';?>/><label for="infile">File</label><input type="file" id="fin" name="fin" <?echo $_POST['input']=='file'?'':'disabled="disabled"';?>/></td></tr>
-<tr><td>Output: </td><td><input type="radio" name="out" onclick="getobj('form').target='_self'" id="ta" value="text" <?echo ($_POST['out']=="text")?'checked="checked" ':'';?>/><label for="ta">Text Area</label> <input type="radio" name="out" id="fd" onclick="document.all.form.target='_self'" value="file" <?echo ($_POST['out']=="file")?'checked="checked" ':'';?>/><label for="fd">File Download</label> <input type="radio" name="out" onclick="document.all.form.target='_blank'" id="bf" value="blank" <?echo ($_POST['out']=="blank")?'checked="checked" ':'';?>/><label for="bf">Blank Frame</label></td></tr>
+<tr><td>Input: </td><td><input type="radio" name="input" onclick="document.all.fin.disabled=true;" id="intext" value="text" <?echo $_POST['input']=='text'?'checked="checked"':'';?>/><label for="intext">Text Area</label><input type="radio" onclick="document.all.fin.disabled=false;" name="input" id="infile" value="file" <?echo $_POST['input']=='file'?'checked="checked"':'';?>/><label for="infile">File</label><input type="file" name="fin" <?echo $_POST['input']=='file'?'':'disabled="disabled"';?>/></td></tr>
+<tr><td>Output: </td><td><input type="radio" name="out" onclick="document.all.form.target='_self'" id="ta" value="text" <?echo ($_POST['out']=="text")?'checked="checked" ':'';?>/><label for="ta">Text Area</label> <input type="radio" name="out" id="fd" onclick="document.all.form.target='_self'" value="file" <?echo ($_POST['out']=="file")?'checked="checked" ':'';?>/><label for="fd">File Download</label> <input type="radio" name="out" onclick="document.all.form.target='_blank'" id="bf" value="blank" <?echo ($_POST['out']=="blank")?'checked="checked" ':'';?>/><label for="bf">Blank Frame</label></td></tr>
 </table>
-</fieldset></td><td>
-<fieldset><legend>Textarea Appearance</legend>
-<table>
-<tr><td>Size: </td><td>Rows: <input type="text" size="3" name="trows" value="<?echo $_POST['trows']?>" /> Cols: <input type="text" size="3" name="tcols" value="<?echo $_POST['tcols'];?>" /></td></tr>
-<tr><td>Directionality: </td><td><select name="dir" onChange="document.all.text.dir=this.value"><option value="LTR"<?echo ($dir=="LTR")?' selected="selected"':'';?>>Left to Right</option><option value="RTL"<?echo ($dir=="RTL")?' selected="selected"':'';?>>Right to Left</option></select> <input type="button" value="Change" onclick="if(document.all.trows.value>0)document.all.text.rows=document.all.trows.value; if(document.all.tcols.value>0)document.all.text.cols=document.all.tcols.value;" /></td></tr>
-</table>
-</fieldset></td></tr>
-</table>
+</fieldset>
 <fieldset><legend>Convert</legend>
-<span style="float:left;">
 <table>
 <tr><td>Method: </td><td>
 <select name="method" onchange="assis(1);">
 <option style="color:#555555;" value="raw"<?echo ($method=="raw")?' selected="selected"':'';?>>RAW (Output input)</option>
 <option value="srt"<?echo ($method=="srt")?' selected="selected"':'';?>>Sort</option>
 <option value="tra"<?echo ($method=="tra")?' selected="selected"':'';?>>Transpose</option>
-<option class="ud" value="msk"<?echo ($method=="msk")?' selected="selected"':'';?>>Network</option>
-<option class="ud" value="ttb"<?echo ($method=="ttb")?' selected="selected"':'';?>>To Table</option>
-<option class="ud" value="cac"<?echo ($method=="cac")?' selected="selected"':'';?>>Calculator</option>
-<option class="ud" value="det"<?echo ($method=="det")?' selected="selected"':'';?>>Determinant Value</option>
-<option class="ud" value="mmtp"<?echo ($method=="mmtp")?' selected="selected"':'';?>>Matrix Multiplication</option>
-<option class="ud" value="miv"<?echo ($method=="miv")?' selected="selected"':'';?>>Matrix Inverse</option>
+<option class="ow" value="msk"<?echo ($method=="msk")?' selected="selected"':'';?>>Network</option>
+<option class="ow" value="ttb"<?echo ($method=="ttb")?' selected="selected"':'';?>>To Table</option>
+<option class="ow" value="cac"<?echo ($method=="cac")?' selected="selected"':'';?>>Calculator</option>
+<option class="ow" value="det"<?echo ($method=="det")?' selected="selected"':'';?>>Determinant Value</option>
+<option class="ow" value="mmtp"<?echo ($method=="mmtp")?' selected="selected"':'';?>>Matrix Multiplication</option>
+<option class="ow" value="miv"<?echo ($method=="miv")?' selected="selected"':'';?>>Matrix Inverse</option>
 <option value="mro"<?echo ($method=="mro")?' selected="selected"':'';?>>Matrix Rotate</option>
 <option class="ed" value="mtr"<?echo ($method=="mtr")?' selected="selected"':'';?>>Matrix Transpose</option>
-<option class="ud" value="cor"<?echo ($method=="cor")?' selected="selected"':'';?>>Correct</option>
+<option class="ed" value="ref"<?echo ($method=="ref")?' selected="selected"':'';?>>SquareReflect</option>
+<option class="ow" value="cor"<?echo ($method=="cor")?' selected="selected"':'';?>>Correct</option>
 <option value="ascii"<?echo ($method=="ascii")?' selected="selected"':'';?>>ASCIIFilter</option>
-<option class="ue" value="che"<?echo ($method=="che")?' selected="selected"':'';?>>Chewing</option>
-<option class="ue" value="chs"<?echo ($method=="chs")?' selected="selected"':'';?>>Chewing (Sort)</option>
+<option class="ow" value="che"<?echo ($method=="che")?' selected="selected"':'';?>>Chewing</option>
+<option class="ow" value="chs"<?echo ($method=="chs")?' selected="selected"':'';?>>Chewing (Sort)</option>
 <option value="rep"<?echo ($method=="rep")?' selected="selected"':'';?>>Replace</option>
-<option class="ud" value="pcr"<?echo ($method=="pcr")?' selected="selected"':'';?>>PCRE Replace</option>
-<option class="ud" value="pcm"<?echo ($method=="pcm")?' selected="selected"':'';?>>PCRE Match</option>
+<option class="ow" value="pcr"<?echo ($method=="pcr")?' selected="selected"':'';?>>PCRE Replace</option>
+<option class="ow" value="pcm"<?echo ($method=="pcm")?' selected="selected"':'';?>>PCRE Match</option>
 <option value="spe"<?echo ($method=="spe")?' selected="selected"':'';?>>HtmlSpecialChars</option>
 <option value="hen"<?echo ($method=="hen")?' selected="selected"':'';?>>HtmlEntity</option>
-<option class="ud" value="rpt"<?echo ($method=="rpt")?' selected="selected"':'';?>>Repeat</option>
+<option class="ow" value="rpt"<?echo ($method=="rpt")?' selected="selected"':'';?>>Repeat</option>
 <option class="ed" value="rev"<?echo ($method=="rev")?' selected="selected"':'';?>>Reverse</option>
 <option class="ed" value="crv"<?echo ($method=="crv")?' selected="selected"':'';?>>Case Reverse</option>
-<option class="ud" value="stu"<?echo ($method=="stu")?' selected="selected"':'';?>>StringToUpper</option>
-<option class="ud" value="stl"<?echo ($method=="stl")?' selected="selected"':'';?>>StringToLower</option>
-<option class="ud" value="ucw"<?echo ($method=="ucw")?' selected="selected"':'';?>>UppercaseTheFirstCharacter</option>
-<option class="ud" value="sln"<?echo ($method=="sln")?' selected="selected"':'';?>>StringLength</option>
+<option class="ow" value="stu"<?echo ($method=="stu")?' selected="selected"':'';?>>StringToUpper</option>
+<option class="ow" value="stl"<?echo ($method=="stl")?' selected="selected"':'';?>>StringToLower</option>
+<option class="ow" value="ucw"<?echo ($method=="ucw")?' selected="selected"':'';?>>UppercaseTheFirstCharacter</option>
+<option class="ow" value="sln"<?echo ($method=="sln")?' selected="selected"':'';?>>StringLength</option>
 <option value="bod"<?echo ($method=="bod")?' selected="selected"':'';?>>BitOrder</option>
 <option class="ed" value="bre"<?echo ($method=="bre")?' selected="selected"':'';?>>BitReverse (not)</option>
 <option class="ed" value="key"<?echo ($method=="key")?' selected="selected"':'';?>>Key (xor)</option>
-<option value="rot"<?echo ($method=="rot")?' selected="selected"':'';?>>Rotate</option>
+<option value="rot"<?echo ($method=="rot")?' selected="selected"':'';?>>StringRotate</option>
+<option class="ow" value="mut"<?echo ($method=="mut")?' selected="selected"':'';?>>StringMutate</option>
+<option value="rf"<?echo ($method=="rf")?' selected="selected"':'';?>>Square</option>
 <option value="md5"<?echo ($method=="md5")?' selected="selected"':'';?>>MD5</option>
-<option class="ud" value="sha1"<?echo ($method=="sha1")?' selected="selected"':'';?>>SHA-1</option>
-<option class="ud" value="crc16"<?echo ($method=="crc16")?' selected="selected"':'';?>>CRC16</option>
-<option class="ud" value="crc32"<?echo ($method=="crc32")?' selected="selected"':'';?>>CRC32</option>
+<option class="ow" value="sha1"<?echo ($method=="sha1")?' selected="selected"':'';?>>SHA-1</option>
+<option class="ow" value="crc16"<?echo ($method=="crc16")?' selected="selected"':'';?>>CRC16</option>
+<option class="ow" value="crc32"<?echo ($method=="crc32")?' selected="selected"':'';?>>CRC32</option>
 <option value="url"<?echo ($method=="url")?' selected="selected"':'';?>>URL</option>
 <option value="ur2"<?echo ($method=="ur2")?' selected="selected"':'';?>>URL-2 (Space to %20)</option>
 <option value="b64"<?echo ($method=="b64")?' selected="selected"':'';?>>Base64</option>
@@ -2037,15 +2228,18 @@ echo '<textarea rows="5" cols="90" id="backup" style="display:none;">'.$backup.'
 <option value="oct"<?echo ($method=="oct")?' selected="selected"':'';?>>Oct</option>
 <option value="dec"<?echo ($method=="dec")?' selected="selected"':'';?>>Dec</option>
 <option value="hex"<?echo ($method=="hex")?' selected="selected"':'';?>>Hex</option>
-<option class="ud" value="bbd"<?echo ($method=="bbd")?' selected="selected"':'';?>>BBS -> HTML (Double Color)</option>
-<option class="ud" value="bbs"<?echo ($method=="bbs")?' selected="selected"':'';?>>BBS -> HTML</option>
+<option class="ow" value="bbd"<?echo ($method=="bbd")?' selected="selected"':'';?>>BBS -> HTML (Double Color)</option>
+<option class="ow" value="bbs"<?echo ($method=="bbs")?' selected="selected"':'';?>>BBS -> HTML</option>
 </select> <input type="button" value="Add to Batch" onClick="var i; i=((document.all.mode[0].checked==true)?'e':'d'); if(document.all.batch.value==''){document.all.batch.value=i+'-'+document.all.method.value;}else{document.all.batch.value=document.all.batch.value+', '+i+'-'+document.all.method.value}" /></td></tr>
 <tr><td></td><td><input type="radio" name="mode" id="encode" value="en" <?echo ($_POST['mode']!="de")?'checked="checked" ':'';?>/><label for="encode">Encode</label> <input type="radio" name="mode" id="decode" value="de" <?echo ($_POST['mode']=="de")?'checked="checked" ':'';?>/><label for="decode">Decode</label></td></tr>
 <tr><td>Batch: </td><td><input type="text" size="70" name="batch" value="<?echo $_POST['batch'];?>" /><br /><input type="radio" name="process" id="forward" value="ob" <?echo ($process=="ob")?'checked="checked" ':'';?> /><label for="forward">Forward</label> <input type="radio" name="process" id="backward" value="re" <?echo ($process=="re")?'checked="checked" ':'';?> /><label for="backward">Backward</label> <input type="button" value="Clear" onclick="document.all.batch.value='';" /></td></tr>
+</table>
+</fieldset>
+<fieldset><legend>Setting</legend>
+<table>
 <tr><td>Match/Replace:</td><td><span id="mrc"><a href="javascript:void(null);" class="nd" onclick="if(document.all.pattern.cols>20)document.all.pattern.cols-=20; if(document.all.replacement.cols>20)document.all.replacement.cols-=20;">&#8592;</a><a href="javascript:void(null);" class="nd" onclick="if(document.all.pattern.rows>5)document.all.pattern.rows-=5; if(document.all.replacement.rows>5)document.all.replacement.rows-=5;">&#8593;</a><a href="javascript:void(null);" class="nd" onclick="document.all.pattern.rows=1; document.all.replacement.rows=1; document.all.pattern.cols=70; document.all.replacement.cols=70;">&#9678;</a><a href="javascript:void(null);" class="nd" onclick="document.all.pattern.rows+=5; document.all.replacement.rows+=5;">&#8595;</a><a href="javascript:void(null);" class="nd" onclick="document.all.pattern.cols+=20; document.all.replacement.cols+=20;">&#8594;</a></span>&nbsp;&nbsp;<input type="button" value="Clear" onClick="document.all.pattern.value=''; document.all.replacement.value='';" /></td></tr>
 <tr><td>Pattern:</td><td><textarea name="pattern" cols="70" rows="1"><?echo htmlspecialchars($pattern);?></textarea></td></tr>
-<tr><td>Replacement:</td><td><textarea name="replacement" cols="70" rows="1"><?echo htmlspecialchars($replacement);?></textarea></td></tr></table>
-</span><span style="float:left;"><table>
+<tr><td>Replacement:</td><td><textarea name="replacement" cols="70" rows="1"><?echo htmlspecialchars($replacement);?></textarea></td></tr>
 <tr><td>SubSeparator:</td><td><textarea name="ssep" cols="20" rows="3"><?echo $_POST['ssep'];?></textarea></td></tr>
 <!--
 <tr><td> </td><td><span class="sub"><input type="checkbox"  name="ssepupcre"<?echo ($_POST['ssepupcre']=="on")?' checked="checked"':'';?> /><a onclick="document.all.ssepupcre.click();">Use PCRE</a></span></td></tr>
@@ -2071,13 +2265,23 @@ for($i=0;$i<10;$i++){
 echo '<option value="'.$i.'"'.(($_POST['nrot']==$i)?' selected="selected"':'').'>'.$i.'</option>'."\n";
 }
 ?></select></td></tr>
+<tr><td>Square:</td><td><input type="radio" name="sqr_cl" id="sqr_cl_auto" value="auto"<?echo ($_POST['sqr_cl']=='auto'?' checked="checked"':'');?> /><label for="sqr_cl_auto">Auto</label> <input type="radio" name="sqr_cl" id="sqr_cl_man" value="man"<?echo ($_POST['sqr_cl']=='man'?' checked="checked"':'');?> /><label for="sqr_cl_man">Manual</label> Rows:<input type="text" name="sqr_r" size="2" value="<?echo $_POST['sqr_r'];?>" /> Columns:<input type="text" name="sqr_c" size="2" value="<?echo $_POST['sqr_c'];?>" /></td></tr>
+<tr><td>SquareReflect</td><td><input type="checkbox" id="ref_ver" name="ref_ver"<?echo ($_POST['ref_ver']=='on'?' checked="checked"':'');?> /><label for="ref_ver">Vertical</label><input type="checkbox" id="ref_hor" name="ref_hor"<?echo ($_POST['ref_hor']=='on'?' checked="checked"':'');?> /><label for="ref_hor">Horizonal</label></td></tr>
+<tr><td>StringMutate:</td><td>Keep Left:<input type="text" name="mut_l" size="2" value="<?echo $_POST['mut_l'];?>" /> Right:<input type="text" name="mut_r" size="2" value="<?echo $_POST['mut_r'];?>" /></td></tr>
 <tr><td>Repeat:</td><td><input type="text" name="rpt" size="2" value="<?echo $_POST['rpt'];?>" /></td></tr>
 <tr><td rowspan="3">To Table:</td><td>Border: <input type="checkbox" id="ttb_brd" name="ttb_brd"<?echo ($_POST['ttb_brd']=="on")?' checked="checked"':'';?> /><label for="ttb_brd">Outer</label> <input type="checkbox" id="ttb_ibrd" name="ttb_ibrd"<?echo ($_POST['ttb_ibrd']=="on")?' checked="checked"':'';?> /><label for="ttb_ibrd">Inner</label></td></tr>
 <tr><td><input type="checkbox" id="ttb_mono" name="ttb_mono"<?echo ($_POST['ttb_mono']=="on")?' checked="checked"':'';?> /><label for="ttb_mono">MonoWidth</label></td></tr>
 <tr><td>Align:<input type="radio" name="ttb_align" id="ttb_left" value="left" <?echo ($_POST['ttb_align']=="left")?'checked="checked" ':'';?>/><label for="ttb_left">Left</label> <input type="radio" name="ttb_align" id="ttb_center" value="center" <?echo ($_POST['ttb_align']=="center")?'checked="checked" ':'';?>/><label for="ttb_center">Center</label> <input type="radio" id="ttb_right" name="ttb_align" value="right" <?echo ($_POST['ttb_align']=="right")?'checked="checked" ':'';?>/><label for="ttb_right">Right</label></td></tr>
 </table>
 </span>
-</fieldset><fieldset><legend>Charset</legend>
+</fieldset>
+<fieldset><legend>Textarea Appearance</legend>
+<table>
+<tr><td>Size: </td><td>Rows: <input type="text" size="3" name="trows" value="<?echo $_POST['trows']?>" /> Cols: <input type="text" size="3" name="tcols" value="<?echo $_POST['tcols'];?>" /></td></tr>
+<tr><td>Directionality: </td><td><select name="dir" onChange="document.all.text.dir=this.value"><option value="LTR"<?echo ($dir=="LTR")?' selected="selected"':'';?>>Left to Right</option><option value="RTL"<?echo ($dir=="RTL")?' selected="selected"':'';?>>Right to Left</option></select> <input type="button" value="Change" onclick="if(document.all.trows.value>0)document.all.text.rows=document.all.trows.value; if(document.all.tcols.value>0)document.all.text.cols=document.all.tcols.value;" /></td></tr>
+</table>
+</fieldset>
+<fieldset><legend>Charset</legend>
 Current : <script type="text/javascript">document.write(((typeof(document.charset)=="undefined")?document.characterSet:document.charset));</script><br />
 <script type="text/javascript">
 	document.write('<input type="hidden" name="ccharset" value="'+((typeof(document.charset)=="undefined")?document.characterSet:document.charset)+'" />');
