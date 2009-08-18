@@ -25,7 +25,7 @@
 
 $time_begin=mtime();
 #<php>
-$ver_serial='2009032800';
+$ver_serial='2009081800';
 ini_set('display_errors', '0');
 #error_reporting(E_ALL & ~E_NOTICE);
 set_magic_quotes_runtime(0);
@@ -2170,6 +2170,7 @@ function en($method, $s){
 		case 'dec': $s=dec_en($s); break;
 		case 'oct': $s=oct_en($s); break;
 		case 'hex': $s=hex_en($s); break;
+		case 'bsd': $s=bsdconv_once($_POST['bsdconv'],$s) or addmsg(ERR, bsdconv_error()); break;
 		case 'rot': $s=rotate($s,$_POST['rot'],$_POST['nrot']); break;
 		case 'url': $s=($_POST['url_raw']=='on')?rawurlencode($s):urlencode($s); break;
 		case 'raw': break;
@@ -2248,6 +2249,7 @@ function de($method, $s){
 		case 'stl': break;
 		case 'ucw': break;
 		case 'bbs': break;
+		case 'bsd': break;
 		case 'srt': $s=mysort($s,1); break;
 		case 'rpt': break;
 		case 'unq': $s=uniq($s,1); break;
@@ -2914,6 +2916,7 @@ map['pcm']='pattern';
 map['cac']='calc';
 map['key']='key';
 map['bod']='btord';
+map['bsd']='bsdconv';
 map['tra']='transp';
 map['rot']='rot';
 map['stmwth']='strim';
@@ -3147,6 +3150,7 @@ array('acc','Accumulation','no'),
 array('srt','Sort','no'),
 array('unq','Unique','no'),
 array('tra','Transpose','no'),
+array('bsd','BSDConv','ow'),
 array('msk','Network','ow'),
 array('ttb','To Table','ow'),
 array('cac','Calculator','ow'),
@@ -3240,6 +3244,7 @@ SubSeparator:<br /><textarea onfocus="szobj='ssep'" name="ssep" id="ssep" onkeyd
 <tr><td>Match/Replace:</td><td><input type="button" value="Clear" onClick="getobj('pattern').value=''; getobj('replacement').value='';" /></td></tr>
 <tr><td>Pattern:</td><td><textarea onkeydown="return catchTab(this,event);" onfocus="szobj='rep'" name="pattern" id="pattern"><?echo htmlspecialchars($pattern);?></textarea></td></tr>
 <tr><td>Replacement:</td><td><textarea onfocus="szobj='rep'" name="replacement" id="replacement"><?echo htmlspecialchars($replacement);?></textarea></td></tr>
+<tr><td>BSDConv:</td><td><input type="text" name="bsdconv" id="bsdconv" value="<?echo $_POST['bsdconv']?>" /></td></tr>
 <tr><td>Calculator:</td><td><input type="text" name="calculator" id="calc" value="<?echo $_POST['calculator']?>" /></td></tr>
 <tr><td>Key:</td><td><input type="text" name="key" id="key" value="<?echo $_POST['key']?>" /></td></tr>
 <tr><td>BitOrder:</td><td><input type="text" name="order" id="btord" maxlength="8" size="6" value="<?echo $_POST['order'];?>" /></td></tr>
