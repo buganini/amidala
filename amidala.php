@@ -1,4 +1,4 @@
-<?
+<?php
 /*
 * Copyright (c) 2004-2007, Amidala Project
 * All rights reserved.
@@ -2466,7 +2466,7 @@ count=0;
 document.getElementById('bt').value='new Amidala['+count+']';
 }
 function newsmith(){
-smitharray[count]=window.open('<?echo $_SERVER['PHP_SELF']?>?smith='+count);
+smitharray[count]=window.open('<?php echo $_SERVER['PHP_SELF']?>?smith='+count);
 ++count;
 document.getElementById('bt').value='new Amidala['+count+']';
 }
@@ -2487,7 +2487,7 @@ Order:<input type="text" size="30" id="order" />
 <input type="button" onClick="go()" id="trigger" style="display:none;" />
 </body>
 </html>
-<?
+<?php
 die();
 }
 #<init>
@@ -2729,16 +2729,16 @@ global $ver_serial;
 ?>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=<?echo $_POST['charset'];?>" />
-<title>Amidala<?
+<meta http-equiv="Content-Type" content="text/html; charset=<?php echo $_POST['charset'];?>" />
+<title>Amidala<?php
 if(isset($_REQUEST['smith'])){
 echo '['.intval($_REQUEST['smith']).']';
 }
-?> - ver. <?echo $ver_serial;
+?> - ver. <?php echo $ver_serial;
 if(ip()=='127.0.0.1'){
 	echo ' <Local Connection>';
 }?> </title>
-<?
+<?php
 }
 htmlhead();
 ?>
@@ -2767,11 +2767,11 @@ szobj='text';
 szctl(5);
 assis(0);
 textconfig(0);
-showtab('<?echo ($_POST['jmpmsg']=='on' && count($msg)>0)?'msg':$_POST['curtab'];?>');
-<?if(count($msg)==0){?>
+showtab('<?php echo ($_POST['jmpmsg']=='on' && count($msg)>0)?'msg':$_POST['curtab'];?>');
+<?php if(count($msg)==0){?>
 getobj('msgt').style.display='none';
-<?}?>
-getobj('text').focus();<?
+<?php }?>
+getobj('text').focus();<?php
 if($_POST['action']=='yes' && isset($_REQUEST['smith']) && $_POST['passtonext']){
 echo 'opener.document.getElementById(\'trigger\').value='.$_REQUEST['smith'].';';
 echo 'opener.document.getElementById(\'trigger\').click();';
@@ -2844,7 +2844,7 @@ function assis(s){
 		switch(getobj('method').value){
 			case 'ttb':getobj('ssp').checked=true; break;
 			case 'che':getobj('ssp').checked=true; break;
-			default:getobj('ssp').checked=<?echo $_POST['ssp']=='on'?'true':'false';?>; break;
+			default:getobj('ssp').checked=<?php echo $_POST['ssp']=='on'?'true':'false';?>; break;
 		}
 	}
 }
@@ -2956,7 +2956,7 @@ getobj(map[met]).focus();
 function showtab(t){
 	var tabs = new Array();
 	var i;
-<?
+<?php
 for($i=0;$i<count($tabs);++$i){
 	echo 'tabs['.$i."]='".$tabs[$i][0]."';\n";
 }
@@ -3039,8 +3039,8 @@ getobj('replacement').rows=getobj('pattern').rows;
 		}
 	}else if(n==5){
 		if(szobj=='text'){
-getobj('text_rows').value=<?echo $_POST['trows'];?>;
-getobj('text_cols').value=<?echo $_POST['tcols'];?>;
+getobj('text_rows').value=<?php echo $_POST['trows'];?>;
+getobj('text_cols').value=<?php echo $_POST['tcols'];?>;
 textconfig(1);
 		}else if(szobj=='sepr'){
 getobj('sepr').cols=20;
@@ -3077,20 +3077,20 @@ getobj('replacement').cols=70;
 </style>
 </head>
 <body onload="init();" onkeydown="doKeyDown(event)">
-<form method="post" action="<?echo $_SERVER['PHP_SELF'];?>" name="form" id="form" enctype="multipart/form-data">
-<?
+<form method="post" action="<?php echo $_SERVER['PHP_SELF'];?>" name="form" id="form" enctype="multipart/form-data">
+<?php
 if(isset($_REQUEST['smith'])){
 echo '<input type="hidden" name="smith" value="'.intval($_REQUEST['smith']).'" />';
 }
 ?>
 <input type="hidden" name="action" value="yes" />
-<input type="hidden" name="curtab" id="curtab" value="<?echo $_POST['curtab'];?>" />
+<input type="hidden" name="curtab" id="curtab" value="<?php echo $_POST['curtab'];?>" />
 <table><tr>
 <td style="width:12em;">
 <fieldset><legend>Assistance</legend>
 <div id="help" style="font-size:10pt; background-color:#ddf; color:#333; height:10em;"></div>
 </fieldset>
-<input type="button" onclick="if(getobj('ccharset').value=='undefined'){alert('Please fill out your current charset!'); getobj('ccharset').value=''; getobj('ccharset').focus();}else{getobj('form').submit();}" value="Submit" /> <input type="button" onclick="bkbk=getobj('text').value; getobj('text').value=getobj('backup').value; getobj('backup').value=bkbk; if(this.value=='Undo'){this.value='Redo'}else{this.value='Undo'}" value="Undo"> <input type="button" onClick="if(confirm('Sure to clear ?')){location.href='<?echo $_SERVER['PHP_SELF'];?>?action=clear'}" value="Clear" />
+<input type="button" onclick="if(getobj('ccharset').value=='undefined'){alert('Please fill out your current charset!'); getobj('ccharset').value=''; getobj('ccharset').focus();}else{getobj('form').submit();}" value="Submit" /> <input type="button" onclick="bkbk=getobj('text').value; getobj('text').value=getobj('backup').value; getobj('backup').value=bkbk; if(this.value=='Undo'){this.value='Redo'}else{this.value='Undo'}" value="Undo"> <input type="button" onClick="if(confirm('Sure to clear ?')){location.href='<?php echo $_SERVER['PHP_SELF'];?>?action=clear'}" value="Clear" />
 <fieldset><legend>Size Controller</legend>
 <div style="text-align:center;">
 <table>
@@ -3102,39 +3102,39 @@ echo '<input type="hidden" name="smith" value="'.intval($_REQUEST['smith']).'" /
 </fieldset>
 </td>
 <td>
-<textarea onkeydown="return catchTab(this,event);" onfocus="szobj='text';" id="text" name="text" rows="15" cols="85"><?
+<textarea onkeydown="return catchTab(this,event);" onfocus="szobj='text';" id="text" name="text" rows="15" cols="85"><?php
 if(cancel()){
 echo $oridata;
 }else{
 echo ($_POST['ssp']=="on")?$s:htmlspecialchars($s);
 }
 ?></textarea></td></tr></table>
-<textarea id="backup" style="display:none;"><?echo htmlspecialchars($backup);?></textarea>
+<textarea id="backup" style="display:none;"><?php echo htmlspecialchars($backup);?></textarea>
 <div>
-<?
+<?php
 for($i=0;$i<count($tabs);++$i){
 ?>
-<span class="tab" id="<?echo $tabs[$i][0];?>t" onclick="showtab('<?echo $tabs[$i][0];?>')"><?echo $tabs[$i][1];?></span>
-<?
+<span class="tab" id="<?php echo $tabs[$i][0];?>t" onclick="showtab('<?php echo $tabs[$i][0];?>')"><?php echo $tabs[$i][1];?></span>
+<?php
 }
-if(!isset($_REQUEST['smith'])){?><span class="tab" style="color:#777; background:#ccf;" onclick="document.location.href='<?echo $_SERVER['PHP_SELF'];?>?appendix=connector';">Connector</span><?}?>
+if(!isset($_REQUEST['smith'])){?><span class="tab" style="color:#777; background:#ccf;" onclick="document.location.href='<?php echo $_SERVER['PHP_SELF'];?>?appendix=connector';">Connector</span><?php }?>
 </div>
 <div id="gen" class="tabc"><span class="block">
 <table>
 <tr><td>Input: </td><td>
-<input type="radio" name="input" onclick="getobj('help').innerHTML='Auto turn on \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=true; getobj('fin').disabled=true;" id="intext" value="text" <?echo $_POST['input']=='text'?'checked="checked"':'';?>/><label for="intext">Text Area</label>
-<input type="radio" onclick="getobj('help').innerHTML='Auto turn off \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=false; getobj('fin').disabled=false;" name="input" id="infile" value="file" <?echo $_POST['input']=='file'?'checked="checked"':'';?>/><label for="infile">File</label><input type="file" id="fin" name="fin" <?echo $_POST['input']=='file'?'':'disabled="disabled"';?>/>
-<?if(isset($_SESSION['data'])){?><input type="radio" name="input" onclick="getobj('help').innerHTML='Auto turn off \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=false; getobj('fin').disabled=true;" id="insession" value="session" <?echo $_POST['input']=='session'?'checked="checked"':'';?>/><label for="insession">Session</label><select name="in_sess_slot"><?
+<input type="radio" name="input" onclick="getobj('help').innerHTML='Auto turn on \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=true; getobj('fin').disabled=true;" id="intext" value="text" <?php echo $_POST['input']=='text'?'checked="checked"':'';?>/><label for="intext">Text Area</label>
+<input type="radio" onclick="getobj('help').innerHTML='Auto turn off \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=false; getobj('fin').disabled=false;" name="input" id="infile" value="file" <?php echo $_POST['input']=='file'?'checked="checked"':'';?>/><label for="infile">File</label><input type="file" id="fin" name="fin" <?php echo $_POST['input']=='file'?'':'disabled="disabled"';?>/>
+<?php if(isset($_SESSION['data'])){?><input type="radio" name="input" onclick="getobj('help').innerHTML='Auto turn off \'Skip &amp;lt;CR&amp;gt;\''; getobj('scr').checked=false; getobj('fin').disabled=true;" id="insession" value="session" <?php echo $_POST['input']=='session'?'checked="checked"':'';?>/><label for="insession">Session</label><select name="in_sess_slot"><?php
 for($i=0;$i<count($_SESSION['data']);++$i){
 echo '<option value="'.$i.'"'.($i==$_POST['in_sess_slot']?' selected="selected"':'').'>Slot '.$i.'</option>';
 }
-?></select><?}?></td></tr>
+?></select><?php }?></td></tr>
 <tr><td>Output: </td><td>
-<input type="radio" name="out" onclick="getobj('form').target='_self'" id="ta" value="text" <?echo ($_POST['out']=="text")?'checked="checked" ':'';?>/><label for="ta">Text Area</label>
-<input type="radio" name="out" id="fd" onclick="getobj('form').target='_self'" value="file" <?echo ($_POST['out']=="file")?'checked="checked" ':'';?>/><label for="fd">File Download</label>
-<input type="radio" name="out" onclick="getobj('form').target='_blank'" id="bf" value="blank" <?echo ($_POST['out']=="blank")?'checked="checked" ':'';?>/><label for="bf">Blank Frame</label>
-<input type="radio" name="out" onclick="getobj('form').target='_self'" id="sess" value="session" <?echo ($_POST['out']=='session')?'checked="checked" ':'';?>/><label for="sess">Session</label>
-<select name="out_sess_slot"><?
+<input type="radio" name="out" onclick="getobj('form').target='_self'" id="ta" value="text" <?php echo ($_POST['out']=="text")?'checked="checked" ':'';?>/><label for="ta">Text Area</label>
+<input type="radio" name="out" id="fd" onclick="getobj('form').target='_self'" value="file" <?php echo ($_POST['out']=="file")?'checked="checked" ':'';?>/><label for="fd">File Download</label>
+<input type="radio" name="out" onclick="getobj('form').target='_blank'" id="bf" value="blank" <?php echo ($_POST['out']=="blank")?'checked="checked" ':'';?>/><label for="bf">Blank Frame</label>
+<input type="radio" name="out" onclick="getobj('form').target='_self'" id="sess" value="session" <?php echo ($_POST['out']=='session')?'checked="checked" ':'';?>/><label for="sess">Session</label>
+<select name="out_sess_slot"><?php
 for($i=0;$i<count($_SESSION['data']);++$i){
 	echo '<option value="'.$i.'"'.($i==$_POST['out_sess_slot']?' selected="selected"':'').'>Slot '.$i.'</option>';
 }
@@ -3143,7 +3143,7 @@ if($i<8){ echo '<option value="'.$i.'">Slot '.$i.' (New)</option>'; }
 </td></tr>
 <tr><td>Method: </td><td>
 <select name="method" id="method" onchange="assis(1);">
-<?
+<?php
 $methods_table=array(
 array('raw','RAW (Output input)','rw'),
 array('acc','Accumulation','no'),
@@ -3216,85 +3216,85 @@ for($i=0;$i<count($methods_table);++$i){
 }
 ?>
 </select> <input type="button" value="Add to Batch" onClick="var i; i=((getobj('mode_en').checked==true)?'e':'d'); if(getobj('batch').value==''){getobj('batch').value=i+'-'+getobj('method').value;}else{getobj('batch').value=getobj('batch').value+', '+i+'-'+getobj('method').value}" /> <input type="button" onclick="jmp_config()" value="Configuration" /></td></tr>
-<tr><td></td><td><?radio('mode','en','Encode');?> <?radio('mode','de','Decode');?></td></tr>
-<tr><td>Batch: </td><td><input type="text" size="70" name="batch" id="batch" value="<?echo $_POST['batch'];?>" /><br /><?radio('process','en','Forward');?> <?radio('process','de','Backward');?> <input type="button" value="Clear" onclick="getobj('batch').value='';" /></td></tr>
-</table></span><span class="block"><?chkbx('sep','Separator');?><br />
+<tr><td></td><td><?php radio('mode','en','Encode');?> <?php radio('mode','de','Decode');?></td></tr>
+<tr><td>Batch: </td><td><input type="text" size="70" name="batch" id="batch" value="<?php echo $_POST['batch'];?>" /><br /><?php radio('process','en','Forward');?> <?php radio('process','de','Backward');?> <input type="button" value="Clear" onclick="getobj('batch').value='';" /></td></tr>
+</table></span><span class="block"><?php chkbx('sep','Separator');?><br />
 <span style="padding-left:10px;">
-<?chkbx('sep_pcre','PCRE');?><br />
-<textarea name="sepr" onkeydown="return catchTab(this,event);" onfocus="szobj='sepr'" id="sepr"><?echo $_POST['sepr'];?></textarea><br /><?chkbx('plus_1','Plus 1');?>
+<?php chkbx('sep_pcre','PCRE');?><br />
+<textarea name="sepr" onkeydown="return catchTab(this,event);" onfocus="szobj='sepr'" id="sepr"><?php echo $_POST['sepr'];?></textarea><br /><?php chkbx('plus_1','Plus 1');?>
 </span></span>
 </div>
 <div id="conf" class="tabc"><span class="block">
-<?chkbx('jmpmsg','Auto Jump to Message');?><br />
-<?chkbx('mbstring','Enable MBString',mb());?><br />
-<?chkbx('casei','Case-Insensitive');?><br />
-<?chkbx('sess_txt_also','Copy Session output to Textarea');?><br />
-<?chkbx('scr','Skip &lt;CR&gt;');?><br />
-<?chkbx('ssp','Skip HtmlSpecialChars');?><br />
-<?chkbx('passtonext','Pass to Next');?><br />
-<?chkbx('ibk','Enable Undo');?><br />
-Precision: <input type="text" name="scale" size="2" value="<?echo $_POST['scale'];?>" /><br />
-Square Padding: <input type="text" size="10" name="mfix_pad" value="<?echo $_POST['mfix_pad'];?>" />
+<?php chkbx('jmpmsg','Auto Jump to Message');?><br />
+<?php chkbx('mbstring','Enable MBString',mb());?><br />
+<?php chkbx('casei','Case-Insensitive');?><br />
+<?php chkbx('sess_txt_also','Copy Session output to Textarea');?><br />
+<?php chkbx('scr','Skip &lt;CR&gt;');?><br />
+<?php chkbx('ssp','Skip HtmlSpecialChars');?><br />
+<?php chkbx('passtonext','Pass to Next');?><br />
+<?php chkbx('ibk','Enable Undo');?><br />
+Precision: <input type="text" name="scale" size="2" value="<?php echo $_POST['scale'];?>" /><br />
+Square Padding: <input type="text" size="10" name="mfix_pad" value="<?php echo $_POST['mfix_pad'];?>" />
 </span>
 <span class="block">
-SubSeparator:<br /><textarea onfocus="szobj='ssep'" name="ssep" id="ssep" onkeydown="return catchTab(this,event);"><?echo $_POST['ssep'];?></textarea>
+SubSeparator:<br /><textarea onfocus="szobj='ssep'" name="ssep" id="ssep" onkeydown="return catchTab(this,event);"><?php echo $_POST['ssep'];?></textarea>
 </span></div>
 <div id="arg" class="tabc">
 <table>
 <tr><td>Match/Replace:</td><td><input type="button" value="Clear" onClick="getobj('pattern').value=''; getobj('replacement').value='';" /></td></tr>
-<tr><td>Pattern:</td><td><textarea onkeydown="return catchTab(this,event);" onfocus="szobj='rep'" name="pattern" id="pattern"><?echo htmlspecialchars($pattern);?></textarea></td></tr>
-<tr><td>Replacement:</td><td><textarea onfocus="szobj='rep'" name="replacement" id="replacement"><?echo htmlspecialchars($replacement);?></textarea></td></tr>
-<tr><td>BSDConv:</td><td><input type="text" name="bsdconv" id="bsdconv" value="<?echo $_POST['bsdconv']?>" /></td></tr>
-<tr><td>Calculator:</td><td><input type="text" name="calculator" id="calc" value="<?echo $_POST['calculator']?>" /></td></tr>
-<tr><td>Key:</td><td><input type="text" name="key" id="key" value="<?echo $_POST['key']?>" /></td></tr>
-<tr><td>BitOrder:</td><td><input type="text" name="order" id="btord" maxlength="8" size="6" value="<?echo $_POST['order'];?>" /></td></tr>
+<tr><td>Pattern:</td><td><textarea onkeydown="return catchTab(this,event);" onfocus="szobj='rep'" name="pattern" id="pattern"><?php echo htmlspecialchars($pattern);?></textarea></td></tr>
+<tr><td>Replacement:</td><td><textarea onfocus="szobj='rep'" name="replacement" id="replacement"><?php echo htmlspecialchars($replacement);?></textarea></td></tr>
+<tr><td>BSDConv:</td><td><input type="text" name="bsdconv" id="bsdconv" value="<?php echo $_POST['bsdconv']?>" /></td></tr>
+<tr><td>Calculator:</td><td><input type="text" name="calculator" id="calc" value="<?php echo $_POST['calculator']?>" /></td></tr>
+<tr><td>Key:</td><td><input type="text" name="key" id="key" value="<?php echo $_POST['key']?>" /></td></tr>
+<tr><td>BitOrder:</td><td><input type="text" name="order" id="btord" maxlength="8" size="6" value="<?php echo $_POST['order'];?>" /></td></tr>
 <tr><td>Transpose:</td><td><select id="transp" name="transpose">
-<?
+<?php
 for($i=0;$i<12;++$i){
 echo '<option value="'.$i.'"'.(($_POST['transpose']==$i)?' selected="selected"':'').'>'.$i.'</option>'."\n";
 }
 ?>
 </select></td></tr>
 <tr><td>Rotate:</td><td>Letter<select id="rot" name="rot">
-<?
+<?php
 for($i=0;$i<26;++$i){
 echo '<option value="'.$i.'"'.(($_POST['rot']==$i)?' selected="selected"':'').'>'.$i.'</option>'."\n";
 }
 ?></select> Number<select name="nrot">
-<?
+<?php
 for($i=0;$i<10;++$i){
 echo '<option value="'.$i.'"'.(($_POST['nrot']==$i)?' selected="selected"':'').'>'.$i.'</option>'."\n";
 }
 ?></select></td></tr>
-<tr><td>StringTrimWidth</td><td>Width:<input type="text" id="strim" name="stmwthl" size="2" value="<?echo $_POST['stmwthl'];?>" /> Append:<input type="text" name="stmwtha" size="5" value="<?echo $_POST['stmwtha'];?>" /></td></tr>
-<tr><td>Base:</td><td>Bits<input type="text" name="base_bit" id="base" size="2" value="<?echo $_POST['base_bit'];?>" /> Pad<input type="text" name="base_pad" size="2" value="<?echo $_POST['base_pad'];?>" /><br />
-Symbol<input type="text" name="base_symbol" size="70" value="<?echo $_POST['base_symbol'];?>" /></td></tr>
-<tr><td>Numeric Base:</td><td>From<input type="text" name="base_from" id="nbase" size="2" value="<?echo $_POST['base_from'];?>" /> To<input type="text" name="base_to" size="2" value="<?echo $_POST['base_to'];?>" /></td></tr>
-<tr><td>From Symbols</td><td><input type="text" name="num_base_symbol1" size="80" value="<?echo $_POST['num_base_symbol1'];?>" /><br />
-Sign<input type="text" name="base_sign1" size="2" value="<?echo $_POST['base_sign1'];?>" /> Point<input type="text" name="base_point1" size="2" value="<?echo $_POST['base_point1'];?>" /></td></tr>
-<tr><td>To Symbols</td><td><input type="text" name="num_base_symbol2" size="80" value="<?echo $_POST['num_base_symbol2'];?>" /><br />
-Sign<input type="text" name="base_sign2" size="2" value="<?echo $_POST['base_sign2'];?>" /> Point<input type="text" name="base_point2" size="2" value="<?echo $_POST['base_point2'];?>" /></td></tr></td></tr>
+<tr><td>StringTrimWidth</td><td>Width:<input type="text" id="strim" name="stmwthl" size="2" value="<?php echo $_POST['stmwthl'];?>" /> Append:<input type="text" name="stmwtha" size="5" value="<?php echo $_POST['stmwtha'];?>" /></td></tr>
+<tr><td>Base:</td><td>Bits<input type="text" name="base_bit" id="base" size="2" value="<?php echo $_POST['base_bit'];?>" /> Pad<input type="text" name="base_pad" size="2" value="<?php echo $_POST['base_pad'];?>" /><br />
+Symbol<input type="text" name="base_symbol" size="70" value="<?php echo $_POST['base_symbol'];?>" /></td></tr>
+<tr><td>Numeric Base:</td><td>From<input type="text" name="base_from" id="nbase" size="2" value="<?php echo $_POST['base_from'];?>" /> To<input type="text" name="base_to" size="2" value="<?php echo $_POST['base_to'];?>" /></td></tr>
+<tr><td>From Symbols</td><td><input type="text" name="num_base_symbol1" size="80" value="<?php echo $_POST['num_base_symbol1'];?>" /><br />
+Sign<input type="text" name="base_sign1" size="2" value="<?php echo $_POST['base_sign1'];?>" /> Point<input type="text" name="base_point1" size="2" value="<?php echo $_POST['base_point1'];?>" /></td></tr>
+<tr><td>To Symbols</td><td><input type="text" name="num_base_symbol2" size="80" value="<?php echo $_POST['num_base_symbol2'];?>" /><br />
+Sign<input type="text" name="base_sign2" size="2" value="<?php echo $_POST['base_sign2'];?>" /> Point<input type="text" name="base_point2" size="2" value="<?php echo $_POST['base_point2'];?>" /></td></tr></td></tr>
 </table>
 <table>
-<tr><td>Square:</td><td><?radio('sqr_cl','auto','Auto');?> <?radio('sqr_cl','man','Manual');?> Rows:<input type="text" name="sqr_r" size="2" value="<?echo $_POST['sqr_r'];?>" /> Columns:<input type="text" name="sqr_c" size="2" value="<?echo $_POST['sqr_c'];?>" /></td></tr>
-<tr><td>SquareReflect</td><td><?chkbx('ref_ver','Vertical');?> <?chkbx('ref_hor','Horizonal');?></td></tr>
-<tr><td>StringMutate:</td><td><?chkbx('mut_fit','ShapeFit');?> Keep Left:<input type="text" name="mut_l" size="2" value="<?echo $_POST['mut_l'];?>" /> Right:<input type="text" name="mut_r" size="2" value="<?echo $_POST['mut_r'];?>" /></td></tr>
-<tr><td>BBS->HTML:</td><td><?chkbx('bbs2html_headntail','Full HTML');?> Write CSS in<?radio('bbs2html_style_where','class','Class');?><?radio('bbs2html_style_where','style','Style');?></td></tr>
-<tr><td>URL:</td><td><?chkbx('url_raw','RFC1738');?></td></tr>
-<tr><td>Chewing:</td><td><?chkbx('chewing_sort','Sort');?></td></tr>
-<tr><td>Repeat:</td><td><input type="text" name="rpt" id="rpt" size="2" value="<?echo $_POST['rpt'];?>" /></td></tr>
-<tr><td>Crypt:</td><td>Salt<input type="text" name="crypt_salt" id="crypt_salt" size="20" value="<?echo $_POST['crypt_salt'];?>" /></td></tr>
-<tr><td rowspan="3">To Table:</td><td>Border: <?chkbx('ttb_brd','Outer');?> <?chkbx('ttb_ibrd','Inner');?></td></tr>
-<tr><td><?chkbx('ttb_mono','MonoWidth');?></td></tr>
-<tr><td>Align:<?radio('ttb_align','left','Left');?> <?radio('ttb_align','center','Center');?> <?radio('ttb_align','right','Right');?></td></tr>
+<tr><td>Square:</td><td><?php radio('sqr_cl','auto','Auto');?> <?php radio('sqr_cl','man','Manual');?> Rows:<input type="text" name="sqr_r" size="2" value="<?php echo $_POST['sqr_r'];?>" /> Columns:<input type="text" name="sqr_c" size="2" value="<?php echo $_POST['sqr_c'];?>" /></td></tr>
+<tr><td>SquareReflect</td><td><?php chkbx('ref_ver','Vertical');?> <?php chkbx('ref_hor','Horizonal');?></td></tr>
+<tr><td>StringMutate:</td><td><?php chkbx('mut_fit','ShapeFit');?> Keep Left:<input type="text" name="mut_l" size="2" value="<?php echo $_POST['mut_l'];?>" /> Right:<input type="text" name="mut_r" size="2" value="<?php echo $_POST['mut_r'];?>" /></td></tr>
+<tr><td>BBS->HTML:</td><td><?php chkbx('bbs2html_headntail','Full HTML');?> Write CSS in<?php radio('bbs2html_style_where','class','Class');?><?php radio('bbs2html_style_where','style','Style');?></td></tr>
+<tr><td>URL:</td><td><?php chkbx('url_raw','RFC1738');?></td></tr>
+<tr><td>Chewing:</td><td><?php chkbx('chewing_sort','Sort');?></td></tr>
+<tr><td>Repeat:</td><td><input type="text" name="rpt" id="rpt" size="2" value="<?php echo $_POST['rpt'];?>" /></td></tr>
+<tr><td>Crypt:</td><td>Salt<input type="text" name="crypt_salt" id="crypt_salt" size="20" value="<?php echo $_POST['crypt_salt'];?>" /></td></tr>
+<tr><td rowspan="3">To Table:</td><td>Border: <?php chkbx('ttb_brd','Outer');?> <?php chkbx('ttb_ibrd','Inner');?></td></tr>
+<tr><td><?php chkbx('ttb_mono','MonoWidth');?></td></tr>
+<tr><td>Align:<?php radio('ttb_align','left','Left');?> <?php radio('ttb_align','center','Center');?> <?php radio('ttb_align','right','Right');?></td></tr>
 </table>
 </span>
 </div>
 <div id="txt" class="tabc">
 <table>
-<tr><td>Size:</td><td>Width: <input type="text" size="2" name="tcols" id="text_cols" value="<?echo $_POST['tcols'];?>" /> Height: <input type="text" size="2" name="trows" id="text_rows" value="<?echo $_POST['trows']?>" /></td></tr>
-<tr><td>Directionality:</td><td><select name="dir" id="text_dir"><option value="LTR"<?echo ($dir=="LTR")?' selected="selected"':'';?>>Left to Right</option><option value="RTL"<?echo ($dir=="RTL")?' selected="selected"':'';?>>Right to Left</option></select></td></tr>
-<tr><td>Font:</td><td>Size: <input type="text" size="2" name="text_size" id="text_size" value="<?echo $_POST['text_size'];?>" /></td></tr>
+<tr><td>Size:</td><td>Width: <input type="text" size="2" name="tcols" id="text_cols" value="<?php echo $_POST['tcols'];?>" /> Height: <input type="text" size="2" name="trows" id="text_rows" value="<?php echo $_POST['trows']?>" /></td></tr>
+<tr><td>Directionality:</td><td><select name="dir" id="text_dir"><option value="LTR"<?php echo ($dir=="LTR")?' selected="selected"':'';?>>Left to Right</option><option value="RTL"<?php echo ($dir=="RTL")?' selected="selected"':'';?>>Right to Left</option></select></td></tr>
+<tr><td>Font:</td><td>Size: <input type="text" size="2" name="text_size" id="text_size" value="<?php echo $_POST['text_size'];?>" /></td></tr>
 </table>
 <input type="button" value="Apply" onclick="textconfig(0);" />
 </div>
@@ -3302,8 +3302,8 @@ Sign<input type="text" name="base_sign2" size="2" value="<?echo $_POST['base_sig
 Current : <script type="text/javascript">
 	document.write('<input type="text" name="ccharset" id="ccharset" value="'+((typeof(document.charset)=="undefined")?document.characterSet:document.charset)+'" />');
 </script><br />
-Next : <input type="text" name="charset" id="charset" value="<?echo $_POST['charset'];?>" /><select onChange="getobj('charset').value=this.value;">
-<option value="<?echo $_POST['charset'];?>" selected="selected">Default(<?echo $_POST['charset'];?>)</option>
+Next : <input type="text" name="charset" id="charset" value="<?php echo $_POST['charset'];?>" /><select onChange="getobj('charset').value=this.value;">
+<option value="<?php echo $_POST['charset'];?>" selected="selected">Default(<?php echo $_POST['charset'];?>)</option>
 <option value="UTF-8">Unicode(UTF-8)</option>
 <option value="big5">Chinese Traditional(big5)</option>
 <option value="gb2312">Chinese Simplified(gb2312)</option>
@@ -3335,16 +3335,16 @@ Next : <input type="text" name="charset" id="charset" value="<?echo $_POST['char
 </div>
 <div id="cli" class="tabc">
 <table>
-<tr><td>IP</td><td><?echo ip();?></td></tr>
-<tr><td>FQDN</td><td><?echo gethostbyaddr(ip());?></td></tr>
-<tr><td>User Agent</td><td><?echo $_SERVER['HTTP_USER_AGENT'];?></td></tr>
-<tr><td>Accept Language</td><td><?echo $_SERVER["HTTP_ACCEPT_LANGUAGE"];?></td></tr>
-<tr><td>Accept Charset</td><td><?echo empty($_SERVER["HTTP_ACCEPT_CHARSET"])?'Not Provided':$_SERVER["HTTP_ACCEPT_CHARSET"];?></td></tr>
-<tr><td>Request Duration</td><td><?echo mtime()-$time_begin;?></td></tr>
+<tr><td>IP</td><td><?php echo ip();?></td></tr>
+<tr><td>FQDN</td><td><?php echo gethostbyaddr(ip());?></td></tr>
+<tr><td>User Agent</td><td><?php echo $_SERVER['HTTP_USER_AGENT'];?></td></tr>
+<tr><td>Accept Language</td><td><?php echo $_SERVER["HTTP_ACCEPT_LANGUAGE"];?></td></tr>
+<tr><td>Accept Charset</td><td><?php echo empty($_SERVER["HTTP_ACCEPT_CHARSET"])?'Not Provided':$_SERVER["HTTP_ACCEPT_CHARSET"];?></td></tr>
+<tr><td>Request Duration</td><td><?php echo mtime()-$time_begin;?></td></tr>
 </table>
 </div>
 <div id="msg" class="tabc">
-<?
+<?php
 if(count($msg)>0){
 echo implode('<br />',$msg);
 }else{
@@ -3354,7 +3354,7 @@ echo 'No message.';
 </div>
 <p>
 <span style="text-align:left; float:left;"><a class="link" href="mailto:buganini@gmail.com">Contact me</a></span>
-<span style="text-align:right; float:right;"><a class="link" style="font-size:9pt;" href="<?echo $_SERVER['PHP_SELF'];?>?appendix=source">ver. <?echo $ver_serial;?></a></span>
+<span style="text-align:right; float:right;"><a class="link" style="font-size:9pt;" href="<?php echo $_SERVER['PHP_SELF'];?>?appendix=source">ver. <?php echo $ver_serial;?></a></span>
 </p>
 </form>
 </body>
