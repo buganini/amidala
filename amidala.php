@@ -25,7 +25,7 @@
 
 $time_begin=mtime();
 #<php>
-$ver_serial='2009081800';
+$ver_serial='2010122400';
 ini_set('display_errors', '0');
 #error_reporting(E_ALL & ~E_NOTICE);
 set_magic_quotes_runtime(0);
