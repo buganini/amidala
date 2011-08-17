@@ -2170,7 +2170,7 @@ function en($method, $s){
 		case 'dec': $s=dec_en($s); break;
 		case 'oct': $s=oct_en($s); break;
 		case 'hex': $s=hex_en($s); break;
-		case 'bsd': $s=bsdconv_once($_POST['bsdconv'],$s) or addmsg(ERR, bsdconv_error()); break;
+		case 'bsd': $s=bsdconv(bsdconv_create($_POST['bsdconv']),$s) or addmsg(ERR, bsdconv_error()); break;
 		case 'rot': $s=rotate($s,$_POST['rot'],$_POST['nrot']); break;
 		case 'url': $s=($_POST['url_raw']=='on')?rawurlencode($s):urlencode($s); break;
 		case 'raw': break;
